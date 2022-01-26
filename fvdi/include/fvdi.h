@@ -228,6 +228,13 @@ typedef struct Fontextra_ {
     short ref_count;		/* Reference count (dispose if 0) */
 
     /* Vector fonts */
+    short format;       /* XFNT_INFO.format */
+    char psname[32];    /* Postscript name TT_NAME_ID_PS_NAME */
+    char facename[16];  /* TT_NAME_ID_FONT_FAMILY */
+    char fontform[14];  /* style_name */
+    char fontclass;     /* fh_cflgs Italic/Monospace/Serif/Display */
+    char famclass;      /* fh_famcl Serif/Sans/Mono/Script/Decorative */
+    char formclass;     /* fh_frmcl width and height "forms" */
     char *filename;		/* Font filename for on-demand backends */
     short index;			/* FreeType2 font index */
     void *current;		/* Font current glyph */

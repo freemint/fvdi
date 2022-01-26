@@ -14,6 +14,10 @@
 #include <freetype/config/ftconfig.h>
 #ifdef FT_FREETYPE_H
 #include FT_FREETYPE_H
+#include FT_SFNT_NAMES_H
+#include FT_TRUETYPE_IDS_H
+#include FT_TRUETYPE_TABLES_H
+#include FT_FONT_FORMATS_H
 #include FT_GLYPH_H
 #include FT_SYNTHESIS_H
 #include FT_STROKER_H
@@ -413,6 +417,217 @@ static short ft2_get_face_id(Virtual *vwk, FT_Face face)
     return id;
 }
 
+/*
+ * Search for a name matching name_id/platform_id/encoding_id in the face.
+ * If encoding_id = -1 that means "don't care"
+ * Returns 1 and sets *result if a matching name is found.
+ */
+static char ft2_find_name(FT_Face face,
+    int name_id, int platform_id, int encoding_id, FT_SfntName *result)
+{
+    FT_SfntName name;
+
+    FT_UInt count = FT_Get_Sfnt_Name_Count(face);
+
+    for (FT_UInt i = 0; i < count; i++) {
+        if (FT_Get_Sfnt_Name(face, i, &name) != 0) {
+            continue;
+        }
+
+        if (name.name_id == name_id &&
+            name.platform_id == platform_id &&
+            (encoding_id < 0 || name.encoding_id == encoding_id)) {
+            int matched = 0;
+            switch (name.platform_id) {
+                case TT_PLATFORM_MICROSOFT:
+                    switch (name.language_id) {
+                        case TT_MS_LANGID_ENGLISH_UNITED_STATES:
+                        case TT_MS_LANGID_ENGLISH_UNITED_KINGDOM:
+                            matched = 1;
+                            break;
+                        default:
+                            matched = 0;
+                            break;
+                    }
+                    break;
+                case TT_PLATFORM_MACINTOSH:
+                case TT_PLATFORM_APPLE_UNICODE:
+                    switch (name.language_id) {
+                        case TT_MAC_LANGID_ENGLISH:
+                            matched = 1;
+                            break;
+                        default:
+                            matched = 0;
+                            break;
+                    }
+                    break;
+                default:
+                    matched = 0;
+                    break;
+            }
+            if (matched) {
+                *result = name;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+static int min(int a, int b)
+{
+    return (a < b) ? a : b;
+}
+
+/*
+ * Gets the appropriate name from the sfnt tables and fills in buf.
+ * A NUL will always be appended into buf.
+ */
+static void ft2_get_sfnt_name(FT_Face face, int name_id, char *buf, int bufsiz)
+{
+    FT_SfntName name;
+
+    /* Most fonts use MICROSOFT / UNICODE */
+    if (ft2_find_name(face, name_id, TT_PLATFORM_MICROSOFT, TT_MS_ID_UNICODE_CS, &name) ||
+        ft2_find_name(face, name_id, TT_PLATFORM_APPLE_UNICODE, -1, &name)) {
+        /* FIXME: convert UCS-2 to ASCII slightly better */
+        int maxchars = min(name.string_len / 2, bufsiz - 1);
+        for (int n = 0; n < maxchars; n++) {
+            buf[n] = name.string[2*n + 1];
+        }
+        buf[maxchars] = 0;
+        return;
+    }
+    if (ft2_find_name(face, name_id, TT_PLATFORM_MACINTOSH, TT_MAC_ID_ROMAN, &name)) {
+        /* FIXME: convert MacRoman to ASCII slightly better */
+        int maxchars = min(name.string_len, bufsiz - 1);
+        memcpy(buf, name.string, maxchars);
+        buf[maxchars] = 0;
+        return;
+    }
+}
+
+/*
+ * Derive the fh_cflgs field using the face and OS/2 table
+ */
+static char ft2_derive_cflgs(FT_Face face, TT_OS2 *os2)
+{
+    char cflgs = 0;
+    if (os2->fsSelection & 0x0100 ||
+        os2->fsSelection & 0x0001) {
+        cflgs |= 0x01; /* Oblique or Italic */
+    }
+    if (FT_IS_FIXED_WIDTH(face)) {
+        cflgs |= 0x02; /* Monospace */
+    }
+    switch ((os2->sFamilyClass & 0xff00) >> 8) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 7:
+            cflgs |= 0x04; /* Serif */
+            break;
+        default:
+            break;
+    }
+    /* No obvious way to get Display flag and set 0x08 */
+    return cflgs;
+}
+
+/*
+ * Derive the fh_famcl field using the face and OS/2 table
+ */
+static char ft2_derive_famcl(FT_Face face, TT_OS2 *os2)
+{
+    if (FT_IS_FIXED_WIDTH(face)) {
+        return 2;
+    }
+    switch ((os2->sFamilyClass & 0xff00) >> 8) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 7:
+            return 1;  /* Serif */
+            break;
+        case 8:
+            return 2;  /* Sans-serif */
+            break;
+        case 10:
+            return 4;  /* Script */
+            break;
+        case 12:
+            return 5;  /* Decorative */
+            break;
+        default:
+            return 0;  /* Don't care */
+            break;
+    }
+}
+
+/*
+ * Derive the fh_frmcl field using the OS/2 table
+ */
+static char ft2_derive_frmcl(TT_OS2 *os2)
+{
+    char frmcl = 0;
+    switch (os2->usWeightClass) {
+        case 100:  /* Ultra-light */
+            frmcl |= 0x20;
+            break;
+        case 200:  /* Extra-light */
+            frmcl |= 0x30;
+            break;
+        case 300:  /* Light */
+        case 400:  /* Semi-light */
+            frmcl |= 0x40;
+            break;
+        case 500:  /* Medium */
+            frmcl |= 0x70;
+            break;
+        case 600:  /* Semi-bold */
+            frmcl |= 0x80;
+            break;
+        case 700:  /* Bold */
+            frmcl |= 0xa0;
+            break;
+        case 800:  /* Extra-Bold */
+            frmcl |= 0xb0;
+            break;
+        case 900:  /* Ultra-bold */
+            frmcl |= 0xc0;
+            break;
+        default:
+            break;
+    }
+    switch (os2->usWidthClass) {
+        case 1:  /* Ultra-condensed */
+        case 2:  /* Extra-condensed */
+        case 3:  /* Condensed */
+            frmcl |= 0x04;
+            break;
+        case 4:  /* Semi-condensed */
+            frmcl |= 0x06;
+            break;
+        case 5:  /* Medium (Normal) */
+            frmcl |= 0x08;
+            break;
+        case 6:  /* Semi-expanded */
+            frmcl |= 0x0a;
+            break;
+        case 7:  /* Expanded */
+        case 8:  /* Extra-expanded */
+        case 9:  /* Ultra-expanded */
+            frmcl |= 0x0c;
+            break;
+        default:
+            break;
+    }
+    return frmcl;
+}
 
 /*
  * Load a font and make it ready for use
@@ -462,26 +677,35 @@ Fontheader *ft2_load_font(Virtual *vwk, const char *filename)
         /* Clear the structure */
         memset(font, 0, sizeof(Fontheader));
 
-        /* Construct the font->name = family_name + style_name */
-        {
-            char buf[255];
+        ft2_get_sfnt_name(face, TT_NAME_ID_FULL_NAME, font->name, 32);
 
-            strcpy(buf, face->family_name);
-            strcat(buf, " ");
-            strcat(buf, face->style_name);		/* FIXME: Concatenate? */
-            strncpy(font->name, buf, 32);		/* Family name would be the font name? */
+        const char *format = FT_Get_Font_Format(face);
+        if (strcmp(format, "TrueType") == 0) {
+            font->extra.format = 0x04;
+        } else if (strcmp(format, "Type 1") == 0) {
+            font->extra.format = 0x08;
+        } else if (strcmp(format, "CFF") == 0) {
+            /* fVDI extension: FT2 reports OpenType fonts as CFF */
+            font->extra.format = 0x10;
         }
-
-        /* FIXME: store the font type (TTF, Type1) somewhere for vqt_xfntinfo and vq_fontheader functions
-         *        e.g. the x.app decides what to call depending on the type of the font. */
 
         font->id = ft2_get_face_id(vwk, face);
         font->flags = FONTF_EXTERNAL |				/* FT2 handled font */
             (FT_IS_SCALABLE(face) ? FONTF_SCALABLE : 0) |
             (FT_IS_FIXED_WIDTH(face) ? FONTF_MONOSPACED : 0);	/* .FNT compatible flag */
+
+        ft2_get_sfnt_name(face, TT_NAME_ID_PS_NAME, font->extra.psname, 32);
+        ft2_get_sfnt_name(face, TT_NAME_ID_FONT_FAMILY, font->extra.facename, 32);
+        strncpy(font->extra.fontform, face->style_name, 32);
+
         font->extra.filename = strdup(filename);		/* Font filename to load_glyphs on-demand */
         font->extra.index = 0;				/* Index to load, FIXME: how to we load multiple of them */
         font->extra.effects = 0;
+
+        TT_OS2 *os2 = (TT_OS2 *)FT_Get_Sfnt_Table(face, FT_SFNT_OS2);
+        font->extra.fontclass = ft2_derive_cflgs(face, os2);
+        font->extra.famclass = ft2_derive_famcl(face, os2);
+        font->extra.formclass = ft2_derive_frmcl(os2);
 
         if (!face->num_fixed_sizes)
         {
@@ -671,12 +895,7 @@ void ft2_fontheader(Virtual *vwk, Fontheader *font, VQT_FHDR *fhdr)
     fhdr->fh_hedsz = sizeof(VQT_FHDR);  /* Header size */
     fhdr->fh_fntid = 0;     /* Font ID (Bitstream) */
     fhdr->fh_sfvnr = 0;     /* Font version number */
-    for (i = 0; i < 32; i++)
-    {
-        /* Font full name (vqt_name) */
-        fhdr->fh_fntnm[i] = font->name[i];
-    }
-    fhdr->fh_fntnm[i] = 0;
+    memcpy(fhdr->fh_fntnm, font->name, 32);
     fhdr->fh_mdate[0] = 0;  /* Manufacturing date (DD Mon YY) */
     fhdr->fh_laynm[0] = 0;  /* Character set name, vendor ID, character set ID */
     /* Last two is char set, usually the second two characters in font filename
@@ -741,15 +960,11 @@ void ft2_fontheader(Virtual *vwk, Fontheader *font, VQT_FHDR *fhdr)
      */
     if (face->style_flags & FT_STYLE_FLAG_BOLD)
         fhdr->fh_frmcl = (fhdr->fh_frmcl & 0x0f) | 0xa0;
-    /* The below should likely include "Italic" etc */
-    strncpy(fhdr->fh_sfntn, font->name, /* Short font name */
-            sizeof(fhdr->fh_sfntn));
-    /* Abbreviation of Postscript equivalent font name */
-    strncpy(fhdr->fh_sfacn, face->family_name,  /* Short face name */
-            sizeof(fhdr->fh_sfacn));
-    /* Abbreviation of the typeface family name */
-    strncpy(fhdr->fh_fntfm, face->style_name,  /* Font form (as above), style */
-            sizeof(fhdr->fh_fntfm));
+
+    memcpy(fhdr->fh_sfntn, font->extra.psname, 32);
+    memcpy(fhdr->fh_sfacn, font->extra.facename, 16);
+    memcpy(fhdr->fh_fntfm, font->extra.fontform, 24);
+
     fhdr->fh_itang = 0;     /* Italic angle */
     /* Skew in 1/256 of degrees clockwise, if italic font */
     fhdr->fh_orupm = face->units_per_EM;  /* ORUs per Em */
@@ -766,30 +981,25 @@ void ft2_xfntinfo(Virtual *vwk, Fontheader *font, long flags, XFNT_INFO *info)
     int i;
     FT_Face face = ft2_get_face(vwk, font);
 
-    info->format = (font->flags & FONTF_SCALABLE) ? 4 : 1;
+    info->format = font->extra.format;
+    /* (font->flags & FONTF_SCALABLE) ? 4 : 1; */
 
-    if (flags & XFNT_INFO_FONT_NAME)
+    if (flags & XFNT_INFO_FONT_NAME) /* bit 0 */
     {
-        for (i = 0; i < 32; i++)
-        {
-            info->font_name[i] = font->name[i];
-        }
-        info->font_name[i] = 0;
+        strcpy(info->font_name, font->name);
     }
 
-    if (flags & XFNT_INFO_FAMILY_NAME)
+    if (flags & XFNT_INFO_FAMILY_NAME) /* bit 1 */
     {
-        strncpy(info->family_name, face->family_name, sizeof(info->family_name) - 1);
-        info->family_name[sizeof(info->family_name) - 1] = 0;
+        strcpy(info->family_name, font->extra.facename);
     }
 
-    if (flags & XFNT_INFO_STYLE_NAME)
+    if (flags & XFNT_INFO_STYLE_NAME) /* bit 2 */
     {
-        strncpy(info->style_name, face->style_name, sizeof(info->style_name) - 1);
-        info->style_name[sizeof(info->style_name) - 1] = 0;
+        strcpy(info->style_name, font->extra.fontform);
     }
 
-    if (flags & XFNT_INFO_FILE_NAME1)
+    if (flags & XFNT_INFO_FILE_NAME1) /* bit 3 */
     {
         strncpy(info->file_name1, font->extra.filename, sizeof(info->file_name1) - 1);
         info->file_name1[sizeof(info->file_name1) - 1] = 0;

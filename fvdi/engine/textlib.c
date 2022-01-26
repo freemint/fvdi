@@ -311,7 +311,7 @@ void CDECL lib_vqt_xfntinfo(Virtual *vwk, long flags, long id, long index, XFNT_
         return;
     }
 
-    info->format = 1;
+    info->format = 0x01;  /* Bitmap */
 
     if (flags & XFNT_INFO_FONT_NAME)
     {
@@ -322,18 +322,14 @@ void CDECL lib_vqt_xfntinfo(Virtual *vwk, long flags, long id, long index, XFNT_
         info->font_name[i] = 0;
     }
 
-    /* Dummy text */
     if (flags & XFNT_INFO_FAMILY_NAME)
     {
-        strncpy(info->family_name, "Century 725 Italic BT", sizeof(info->family_name) - 1);
-        info->family_name[sizeof(info->family_name) - 1] = 0;
+        info->family_name[0] = 0;
     }
 
-    /* Dummy text */
     if (flags & XFNT_INFO_STYLE_NAME)
     {
-        strncpy(info->style_name, "Italic", sizeof(info->style_name) - 1);
-        info->style_name[sizeof(info->style_name) - 1] = 0;
+        info->style_name[0] = 0;
     }
 
     if (flags & XFNT_INFO_FILE_NAME1)
@@ -411,21 +407,25 @@ void CDECL lib_vqt_fontheader(Virtual *vwk, VQT_FHDR *fhdr)
      */
     fhdr->fh_cpyrt[0] = 0;  /* Copyright notice */
     fhdr->fh_nchrl = 0;     /* Number of character indices in character set */
-    fhdr->fh_nchrf = 0;     /* Total number of character indices in font */
-    fhdr->fh_fchrf = 0;     /* Index of first character */
+    fhdr->fh_nchrf = font->code.high - font->code.low + 1;  /* Total number of character indices in font */
+    fhdr->fh_fchrf = font->code.low;  /* Index of first character */
     fhdr->fh_nktks = 0;     /* Number of kerning tracks */
     fhdr->fh_nkprs = 0;     /* Number of kerning pairs */
     fhdr->fh_flags = 0;     /* Font flags, bit 0 - extended mode */
     /* Extended mode is for fonts that require higher quality of rendering,
      * such as chess pieces. Otherwise compact, the default.
      */
-    fhdr->fh_cflgs = 1;     /* Classification flags */
+    fhdr->fh_cflgs = 0;     /* Classification flags */
+    if (font->flags & FONTF_MONOSPACED)
+        fhdr->fh_cflgs |= 0x02;
     /* bit 0 - Italic
      * bit 1 - Monospace
      * bit 2 - Serif
      * bit 3 - Display
      */
     fhdr->fh_famcl = 0;     /* Family classification */
+    if (font->flags & FONTF_MONOSPACED)
+        fhdr->fh_famcl |= 0x08;
     /* 0 - Don't care
      * 1 - Serif
      * 2 - Sans serif
@@ -458,20 +458,14 @@ void CDECL lib_vqt_fontheader(Virtual *vwk, VQT_FHDR *fhdr)
      * 0xd_ - Heavy
      * 0xe_ - Black
      */
-    /* Dummy text */
-    strncpy(fhdr->fh_sfntn, "Century725BT-Italic",  /* Short font name */
-            sizeof(fhdr->fh_sfntn));
-    /* Abbreviation of Postscript equivalent font name */
-    strncpy(fhdr->fh_sfacn, "Century 725 BT",  /* Short face name */
-            sizeof(fhdr->fh_sfacn));
-    /* Abbreviation of the typeface family name */
-    strncpy(fhdr->fh_fntfm, "Italic",   /* Font form (as above), style */
-            sizeof(fhdr->fh_fntfm));
+    /* Bitmap fonts have no equivalent strings */
+    fhdr->fh_sfntn[0] = 0;  /* Postscript name eg "Century725BT-Italic" */
+    fhdr->fh_sfacn[0] = 0;  /* Short face name eg "Century725 BT" */
+    fhdr->fh_fntfm[0] = 0;  /* Font 'form' eg "Italic" */
     fhdr->fh_itang = 0;     /* Italic angle */
     /* Skew in 1/256 of degrees clockwise, if italic font */
     fhdr->fh_orupm = 2048;  /* ORUs per Em */
     /* Outline Resolution Units */
-
     /* There's actually a bunch of more values, but they are not
      * in the struct definition, so skip them
      */
