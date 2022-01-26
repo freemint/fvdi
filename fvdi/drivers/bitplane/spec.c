@@ -134,8 +134,10 @@ long check_token(char *token, const char **ptr)
  */
 long initialize(Virtual *vwk)
 {
+#ifdef __mcoldfire__
     /* use screenpt system variable on Firebee as Physbase() doesn't work there (see below FIXME) */
     short** screenpt = (short **) 0x45e;
+#endif
     Workstation *wk;
 #ifdef FAST
     char *buf;
