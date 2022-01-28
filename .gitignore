@@ -16,6 +16,13 @@ depend
 .deps
 fvdi/utility/conv2gas/conv2gas
 fvdi/utility/structer/structer
+fvdi/drivers/16_bit/16_bit.sys
+fvdi/drivers/aranym/aranym.sys
+fvdi/drivers/bitplane/bitplane.sys
+fvdi/drivers/firebee/firebee.sys
+fvdi/drivers/radeon/radeon.sys
+fvdi/drivers/saga/saga.sys
+fvdi/drivers/uaegfx/uaegfx.sys
 struct.tab.c
 struct.tab.h
 lex.yy.c
