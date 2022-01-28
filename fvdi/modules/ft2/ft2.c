@@ -210,6 +210,14 @@ static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face
     if (FT_IS_SCALABLE(face))
     {
         FT_Fixed scale;
+        char buf[10];
+        access->funcs.puts("load_metrics \"");
+        access->funcs.puts(face->family_name);
+        access->funcs.puts("\" ");
+        access->funcs.ltoa(buf, ptsize, 10);
+        access->funcs.puts(buf);
+        access->funcs.puts("\n");
+        access->funcs.puts(buf);
 
         /* Set the character size and use default DPI (72) */
 #if 1
@@ -896,6 +904,14 @@ void ft2_fontheader(Virtual *vwk, Fontheader *font, VQT_FHDR *fhdr)
     fhdr->fh_fntid = 0;     /* Font ID (Bitstream) */
     fhdr->fh_sfvnr = 0;     /* Font version number */
     memcpy(fhdr->fh_fntnm, font->name, 32);
+
+    char msg[50];
+    strcpy(msg, "vqt_fontheader ");
+    memcpy(msg + strlen(msg), font->name, 32);
+    msg[47] = 0;
+    strcat(msg, "\n");
+    access->funcs.puts(msg);
+
     fhdr->fh_mdate[0] = 0;  /* Manufacturing date (DD Mon YY) */
     fhdr->fh_laynm[0] = 0;  /* Character set name, vendor ID, character set ID */
     /* Last two is char set, usually the second two characters in font filename
@@ -980,6 +996,13 @@ void ft2_xfntinfo(Virtual *vwk, Fontheader *font, long flags, XFNT_INFO *info)
 {
     int i;
     FT_Face face = ft2_get_face(vwk, font);
+
+    char msg[50];
+    strcpy(msg, "vqt_xfntinfo ");
+    memcpy(msg + strlen(msg), font->name, 32);
+    msg[47] = 0;
+    strcat(msg, "\n");
+    access->funcs.puts(msg);
 
     info->format = font->extra.format;
     /* (font->flags & FONTF_SCALABLE) ? 4 : 1; */
@@ -2481,6 +2504,7 @@ Fontheader *ft2_vst_point(Virtual *vwk, long ptsize, short *sizes)
     if (ptsize > 32000)
         ptsize = 32000;
 
+    
     if (sizes)
     {
         PRINTF(("Searching $%08lx for %ld: ", (long) sizes, ptsize));
@@ -2497,7 +2521,7 @@ Fontheader *ft2_vst_point(Virtual *vwk, long ptsize, short *sizes)
         PRINTF(("No search for size %ld\n", ptsize));
     }
 
-    /* NEED to update metrics to be up-to-date immediatelly after vst_point() */
+    /* NEED to update metrics to be up-to-date immediately after vst_point() */
     font = ft2_find_fontsize(vwk, font, ptsize);
 
     /* Dispose of the FreeType2 objects */

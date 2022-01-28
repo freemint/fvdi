@@ -185,6 +185,7 @@ long CDECL lib_vqt_name(Virtual *vwk, long number, short *name)
     int i;
     Fontheader *font;
     const unsigned char *font_name;
+    char msg[33];
 
     if (!number || number > vwk->real_address->writing.fonts)
         number = 1;
@@ -192,6 +193,12 @@ long CDECL lib_vqt_name(Virtual *vwk, long number, short *name)
     font = vwk->real_address->writing.first_font;
     for (number -= 2; number >= 0; number--)
         font = font->next;
+
+    access->funcs.puts("vqt_name(");
+    strncpy(msg, font->name, 32);
+    msg[32] = 0;
+    access->funcs.puts(msg);
+    access->funcs.puts(")\n");
 
     font_name = (const unsigned char *)font->name;
     for (i = 31; i >= 0; i--)
@@ -407,8 +414,13 @@ void CDECL lib_vqt_fontheader(Virtual *vwk, VQT_FHDR *fhdr)
      */
     fhdr->fh_cpyrt[0] = 0;  /* Copyright notice */
     fhdr->fh_nchrl = 0;     /* Number of character indices in character set */
+#if 1
+    fhdr->fh_nchrf = 0;     /* Total number of character indices in font */
+    fhdr->fh_fchrf = 0;     /* Index of first character */
+#else
     fhdr->fh_nchrf = font->code.high - font->code.low + 1;  /* Total number of character indices in font */
     fhdr->fh_fchrf = font->code.low;  /* Index of first character */
+#endif
     fhdr->fh_nktks = 0;     /* Number of kerning tracks */
     fhdr->fh_nkprs = 0;     /* Number of kerning pairs */
     fhdr->fh_flags = 0;     /* Font flags, bit 0 - extended mode */
