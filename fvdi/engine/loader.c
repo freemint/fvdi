@@ -913,7 +913,7 @@ static long load_palette(Virtual *vwk, const char **ptr)
     if (Fread(file, 4, &magic) == 4 && magic == 0x50413031UL)
     	size -= 4;
     else
-    	Fseek(file, 0, SEEK_SET);
+    	Fseek(0, file, SEEK_SET);
 
     if (size % (3 * sizeof(short)))
     {
@@ -943,7 +943,13 @@ static long load_palette(Virtual *vwk, const char **ptr)
         return -1;
     }
 
-    Fread(file, size, palette);
+    if (Fread(file, size, palette) != size)
+    {
+        error("Error reading palette!", NULL);
+        free(palette);
+        Fclose(file);
+        return -1;
+    }
 
     Fclose(file);
 
