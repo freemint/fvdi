@@ -2264,6 +2264,7 @@ long ft2_set_effects(Virtual *vwk, Fontheader *font, long effects)
 Fontheader *ft2_vst_point(Virtual *vwk, long ptsize, short *sizes)
 {
     Fontheader *font = vwk->text.current_font;
+    short i = 1;
 
     if (font->size == ptsize)
         return font;
@@ -2271,23 +2272,22 @@ Fontheader *ft2_vst_point(Virtual *vwk, long ptsize, short *sizes)
     if (ptsize > 32000)
         ptsize = 32000;
 
-    if (sizes)
-    {
-        PRINTF(("Searching $%08lx for %ld: ", (long) sizes, ptsize));
-
-        while (*(sizes + 1) <= ptsize)
-        {
-            PRINTF(("%d ", *(sizes + 1)));
-            sizes++;
-        }
-        ptsize = *sizes;
-        PRINTF(("%ld\n", ptsize));
-    } else
+    if (sizes == NULL || sizes[0] == -1)
     {
         PRINTF(("No search for size %ld\n", ptsize));
     }
+    else
+    {
+        PRINTF(("Searching $%08lx for %ld: ", (long) sizes, ptsize));
+        while (sizes[i] <= ptsize && sizes[i] != -1)
+        {
+            i++;
+        }
+        ptsize = sizes[i - 1];
+        PRINTF(("%ld\n", ptsize));
+    }
 
-    /* NEED to update metrics to be up-to-date immediatelly after vst_point() */
+    /* NEED to update metrics to be up-to-date immediately after vst_point() */
     font = ft2_find_fontsize(vwk, font, ptsize);
 
     /* Dispose of the FreeType2 objects */
