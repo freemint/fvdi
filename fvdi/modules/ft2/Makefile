@@ -73,6 +73,10 @@ ftbitmap.o: $(ft2_srcdir)/src/base/ftbitmap.c
 ftstroke.o: $(ft2_srcdir)/src/base/ftstroke.c
 	$(AM_V_CC)$(CC) -c $(CFLAGS) -o $@ $<
 
+# Since FreeType 2.6.x
+ftfntfmt.o: $(ft2_srcdir)/src/base/ftfntfmt.c
+	$(AM_V_CC)$(CC) -c $(CFLAGS) -o $@ $<
+
 #
 # FreeType2 library autohinting module
 #
@@ -203,6 +207,9 @@ gemfnt.o: $(ft2_srcdir)/src/gemfonts/gemfnt.c
 	$(AM_V_CC)$(CC) -c $(CFLAGS) -o $@ $<
 
 BASEOBJ = ftinit.o ftbase.o ftglyph.o ftbbox.o ftmm.o ftsynth.o ftbitmap.o ftstroke.o
+ifneq (,$(wildcard $(ft2_srcdir)/src/base/ftfntfmt.c))
+BASEOBJ += ftfntfmt.o
+endif
 
 #AHINTOBJ = autohint.o autofit.o
 AHINTOBJ = autofit.o

@@ -302,6 +302,7 @@ void CDECL lib_vqt_xfntinfo(Virtual *vwk, long flags, long id, long index, XFNT_
         return;
     }
 
+    info->format = font->extra.format;
     info->id = id;
     info->index = index;
 
@@ -310,8 +311,6 @@ void CDECL lib_vqt_xfntinfo(Virtual *vwk, long flags, long id, long index, XFNT_
         set_stack_call_lvplp(vdi_stack_top, vdi_stack_size, external_xfntinfo, vwk, font, flags, info);
         return;
     }
-
-    info->format = 1;
 
     if (flags & XFNT_INFO_FONT_NAME)
     {

@@ -227,6 +227,8 @@ typedef struct Fontextra_ {
 
     short ref_count;		/* Reference count (dispose if 0) */
 
+    short format;       /* Returned by vqt_xfntinfo() and vqt_ext_name() */
+
     /* Vector fonts */
     char *filename;		/* Font filename for on-demand backends */
     short index;			/* FreeType2 font index */

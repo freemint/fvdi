@@ -24,6 +24,15 @@
 #include <freetype/ftstroke.h>	/* FT_Stroker, ... */
 #endif
 
+/* Appeared in FreeType 2.6.x */
+#if FREETYPE_VERSION >= 2006000L
+#ifdef FT_FREETYPE_H
+#include FT_FONT_FORMATS_H
+#else
+#include <freetype/fnfntfmt.h>
+#endif
+#endif
+
 #include <mint/osbind.h>
 
 #include "globals.h"
@@ -420,6 +429,10 @@ static short ft2_get_face_id(Virtual *vwk, FT_Face face)
 Fontheader *ft2_load_font(Virtual *vwk, const char *filename)
 {
     Fontheader *font;
+#if FREETYPE_VERSION >= 2006000L
+    const char *font_format;
+#endif
+
     int len = (int) strlen(filename);
 
     /* FIXME: hack */
@@ -472,8 +485,20 @@ Fontheader *ft2_load_font(Virtual *vwk, const char *filename)
             strncpy(font->name, buf, 32);		/* Family name would be the font name? */
         }
 
-        /* FIXME: store the font type (TTF, Type1) somewhere for vqt_xfntinfo and vq_fontheader functions
-         *        e.g. the x.app decides what to call depending on the type of the font. */
+#if FREETYPE_VERSION >= 2006000L
+        font_format = FT_Get_Font_Format(face);
+        if (strcmp(font_format, "TrueType") == 0)
+        {
+            font->extra.format = 0x04;
+        } else if (strcmp(font_format, "Type 1") == 0)
+        {
+            font->extra.format = 0x08;
+        } else
+        /* Other formats are supported by FreeType, extend this list? */
+#endif
+        {
+            font->extra.format = 0x04; /* Pretend everything else is a TTF */
+        }
 
         font->id = ft2_get_face_id(vwk, face);
         font->flags = FONTF_EXTERNAL |				/* FT2 handled font */
@@ -765,8 +790,6 @@ void ft2_xfntinfo(Virtual *vwk, Fontheader *font, long flags, XFNT_INFO *info)
 {
     int i;
     FT_Face face = ft2_get_face(vwk, font);
-
-    info->format = (font->flags & FONTF_SCALABLE) ? 4 : 1;
 
     if (flags & XFNT_INFO_FONT_NAME)
     {

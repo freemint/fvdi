@@ -464,7 +464,7 @@ lib_vqt_ext_name:
 	move.w	font_flags(a2),d0
 	and.w	#$0008,d0	; Top byte: 0 - proportional, 1 - monospaced
 	lsl.w	#5,d0
-	move.b	#4,d0		; 1 - bitmap, 2 - speedo, 4 - FT, 8 - Type 1
+	move.w  font_extra_format(a2),d0  ; 1 - bitmap, 2 - speedo, 4 - TrueType, 8 - Type 1
 	move.w	d0,2*33(a1)
  label .bitmap,5
 
