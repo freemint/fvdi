@@ -72,7 +72,7 @@ static Mode const mode[] =                          /* FIXME: big and little end
     /* ... 0, packed pixels, software clut (none), usual bit order */
     { 16, CHECK_PREVIOUS | CHUNKY | TRUE_COLOUR, { r_16f, g_16f, b_16f, none, none, none }, 0, 2, 2, 1 },
     { 24, CHECK_PREVIOUS | CHUNKY | TRUE_COLOUR, { r_32f, g_32f, b_32f, none, none, none }, 0, 2, 2, 1 },
-    { 32, CHECK_PREVIOUS | CHUNKY | TRUE_COLOUR, { r_32f, g_32f, b_32f, none, none, none }, 0, 2, 2, 1 },
+    { 32, CHECK_PREVIOUS | CHUNKY | TRUE_COLOUR, { r_32, g_32, b_32, none, none, none }, 0, 2, 2, 1 },
 
     /* ... 0, packed pixels, software clut (none), fb layout */
     { 16, CHECK_PREVIOUS | CHUNKY | TRUE_COLOUR, { r_16, g_16, b_16, none, none, none }, 0, 2, 2, 0x81 },
