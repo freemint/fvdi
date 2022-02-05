@@ -257,6 +257,9 @@ long startup(void)
     access->funcs.puts("-FT-");
     access->funcs.puts(ft2_version);
 #endif
+#ifdef GIT_COMMIT
+    access->funcs.puts(" (" GIT_COMMIT ")");
+#endif
     access->funcs.puts(" now installed.\n");
 
     if (debug)

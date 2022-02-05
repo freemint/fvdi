@@ -21,6 +21,12 @@ CFLAGS  = $(CPUOPTS) $(OPTS) $(WARNINGS) -I$(top_srcdir)/include -I$(top_srcdir)
 
 LDFLAGS += --mprg-flags=0x27
 
+ifndef GIT_HASH
+ GIT_HASH := $(shell git describe --always --abbrev=10)
+endif
+
+CPPFLAGS += -DGIT_COMMIT="\"$(GIT_HASH)\""
+
 # FreeType2 things
 ifneq ($(ft2_srcdir),)
  LIBS   := -lft2 $(LIBS)
