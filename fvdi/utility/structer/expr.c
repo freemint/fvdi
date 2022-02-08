@@ -181,6 +181,8 @@ static void printtype(Expression expr)
         printtype(expr->info.def.type);
         printf("* ");
         break;
+    default:
+        break;
     }
 }
 
@@ -228,6 +230,8 @@ void printdefs(List defs)
             break;
         case _Listexpr:
             printlist(EXPR(ptr));
+            break;
+        default:
             break;
         }
         NEXT(ptr);

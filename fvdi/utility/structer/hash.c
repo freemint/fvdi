@@ -109,7 +109,7 @@ NTentry *new_string(const char *str, int len)
         }
         memset(nhash, 0, hashsize * sizeof(NTentry *));
     }
-    if (fnd = find(str, len))
+    if ((fnd = find(str, len)))
     {
         IFHT printf("Successful hash search\n");
 

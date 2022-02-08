@@ -195,7 +195,7 @@ static int expr_to_equ(Expression cur_expr, int pos, List all_defs, int *size)
         break;
 
     case _Typedef:
-        if (expr = locate_typedef(type_expr->info.def.name->string, all_defs))
+        if ((expr = locate_typedef(type_expr->info.def.name->string, all_defs)))
         {
             /* Below is an ugly hack! */
             typedef_name = expr->info.var.id->info.id.name->string;
@@ -310,7 +310,7 @@ void convert(char *name, List defs)
     Expression id;
 
     count = 0;
-    if (equ_name = strchr(name, '='))
+    if ((equ_name = strchr(name, '=')))
     {
         *equ_name = '\0';
         equ_name++;
