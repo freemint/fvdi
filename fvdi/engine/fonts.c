@@ -40,7 +40,6 @@ long DRIVER_EXPORT unpack_font(Fontheader *header, long format)
     if ((buf = (char *)malloc((long)chars * 16)) == NULL)
         return 0;
 
-    header->extra.format = 0x01;   /* 1 - Bitmap, 2 - Speedo etc */
     header->extra.unpacked.data = buf;
     header->extra.unpacked.format = format;
 
@@ -112,6 +111,8 @@ long DRIVER_EXPORT fixup_font(Fontheader *header, char *buffer, long flip)
     header->extra.distance.bottom = -top - header->distance.bottom;
     header->extra.distance.descent = -top - header->distance.descent;
     header->extra.distance.top = 0;
+
+    header->extra.format = 0x01;   /* 1 - Bitmap, 2 - Speedo etc */
 
     header->extra.unpacked.data = 0;    /* No smart formats yet */
     header->extra.unpacked.format = 0;

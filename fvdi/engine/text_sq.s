@@ -457,16 +457,15 @@ lib_vqt_ext_name:
 	move.w	font_id(a2),a0
 
 	move.w	#0,2*32(a1)	; Assume bitmap font
-	move.w	#$0101,2*33(a1)	;  and monospaced
 	tst.w	font_flags(a2)
 	lbpl	.bitmap,5
 	move.w	#1,2*32(a1)	; Vector font!
+ label .bitmap,5
 	move.w	font_flags(a2),d0
 	and.w	#$0008,d0	; Top byte: 0 - proportional, 1 - monospaced
 	lsl.w	#5,d0
-	move.w  font_extra_format(a2),d0  ; 1 - bitmap, 2 - speedo, 4 - TrueType, 8 - Type 1
+	move.b	font_extra_format+1(a2),d0  ; 1 - bitmap, 2 - speedo, 4 - TrueType, 8 - Type 1
 	move.w	d0,2*33(a1)
- label .bitmap,5
 
 	lea	font_name(a2),a2
 	moveq	#31,d1
