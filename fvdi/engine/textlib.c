@@ -321,18 +321,14 @@ void CDECL lib_vqt_xfntinfo(Virtual *vwk, long flags, long id, long index, XFNT_
         info->font_name[i] = 0;
     }
 
-    /* Dummy text */
     if (flags & XFNT_INFO_FAMILY_NAME)
     {
-        strncpy(info->family_name, "Century 725 Italic BT", sizeof(info->family_name) - 1);
-        info->family_name[sizeof(info->family_name) - 1] = 0;
+        info->family_name[0] = 0;
     }
 
-    /* Dummy text */
     if (flags & XFNT_INFO_STYLE_NAME)
     {
-        strncpy(info->style_name, "Italic", sizeof(info->style_name) - 1);
-        info->style_name[sizeof(info->style_name) - 1] = 0;
+        info->style_name[0] = 0;
     }
 
     if (flags & XFNT_INFO_FILE_NAME1)
@@ -418,7 +414,7 @@ void CDECL lib_vqt_fontheader(Virtual *vwk, VQT_FHDR *fhdr)
     /* Extended mode is for fonts that require higher quality of rendering,
      * such as chess pieces. Otherwise compact, the default.
      */
-    fhdr->fh_cflgs = 1;     /* Classification flags */
+    fhdr->fh_cflgs = (font->flags & FONTF_MONOSPACED) ? 0x02 : 0x00;  /* Classification flags */
     /* bit 0 - Italic
      * bit 1 - Monospace
      * bit 2 - Serif
@@ -457,15 +453,9 @@ void CDECL lib_vqt_fontheader(Virtual *vwk, VQT_FHDR *fhdr)
      * 0xd_ - Heavy
      * 0xe_ - Black
      */
-    /* Dummy text */
-    strncpy(fhdr->fh_sfntn, "Century725BT-Italic",  /* Short font name */
-            sizeof(fhdr->fh_sfntn));
-    /* Abbreviation of Postscript equivalent font name */
-    strncpy(fhdr->fh_sfacn, "Century 725 BT",  /* Short face name */
-            sizeof(fhdr->fh_sfacn));
-    /* Abbreviation of the typeface family name */
-    strncpy(fhdr->fh_fntfm, "Italic",   /* Font form (as above), style */
-            sizeof(fhdr->fh_fntfm));
+    fhdr->fh_sfntn[0] = 0;  /* Short font name */
+    fhdr->fh_sfacn[0] = 0;  /* Abbreviation of Postscript equivalent font name */
+    fhdr->fh_fntfm[0] = 0;  /* Abbreviation of the typeface family name */
     fhdr->fh_itang = 0;     /* Italic angle */
     /* Skew in 1/256 of degrees clockwise, if italic font */
     fhdr->fh_orupm = 2048;  /* ORUs per Em */
