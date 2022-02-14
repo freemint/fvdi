@@ -119,6 +119,51 @@ short CDECL lib_vst_charmap(Virtual *vwk, long mode)
 
 
 /*
+ * Search the font list for the index'th font
+ * Returns the system font if index is out of scope
+ */
+static Fontheader *find_font_by_index(Virtual *vwk, long index)
+{
+    Fontheader *font;
+
+    font = vwk->real_address->writing.first_font;
+    if (!index || index > vwk->real_address->writing.fonts)
+        index = 1;
+
+    font = vwk->real_address->writing.first_font;
+    for (index -= 2; index >= 0; index--)
+        font = font->next;
+    return font;
+}
+
+
+/*
+ * Search the font list for a fontid.
+ * Returns the font and sets *index to the font's index, or NULL if not found.
+ */
+static Fontheader *find_font_by_id(Fontheader *font, long id, long *index)
+{
+    long i = 0;
+
+    while (font != NULL)
+    {
+        i++;
+        if (font->id == id)
+        {
+            if (index)
+                *index = i;
+            return font;
+        }
+        /* font list is ordered by fontid, stop searching if the id is not present */
+        if (font->id > id)
+            return NULL;
+        font = font->next;
+    }
+    return NULL;
+}
+
+
+/*
  * Todo: Also look for correct size?
  * font_set = lib_vst_font(fontID)
  */
@@ -135,16 +180,12 @@ int lib_vst_font(Virtual *vwk, long fontID)
     {
         if (vwk->text.font == fontID)
             return (int) fontID;
-        if (vwk->text.font > fontID)
+        /* avoid needing to start at first_font */
+        if (vwk->text.font < fontID)
             font = font->extra.first_size;
     }
 
-    do
-    {
-        if (fontID <= font->id)
-            break;
-        font = font->next;
-    } while (font);
+    font = find_font_by_id(font, fontID, NULL);
 
     if (!font || (font->id != fontID))
     {
@@ -156,7 +197,6 @@ int lib_vst_font(Virtual *vwk, long fontID)
         size = vwk->text.current_font->size;
     else
         size = 10;
-
 
     vwk->text.font = fontID;
     set_current_font(vwk, font);
@@ -178,20 +218,15 @@ int lib_vst_font(Virtual *vwk, long fontID)
 /*
  * Apparently extended since NVDI 3.00 (add 33rd word, bitmap/vector flag)
  * Perhaps a version that returns the name as 32 bytes rather than 32 words?
- * id = lib_vqt_name(number, name)
+ * id = lib_vqt_name(index, name)
  */
-long CDECL lib_vqt_name(Virtual *vwk, long number, short *name)
+long CDECL lib_vqt_name(Virtual *vwk, long index, short *name)
 {
     int i;
     Fontheader *font;
     const unsigned char *font_name;
 
-    if (!number || number > vwk->real_address->writing.fonts)
-        number = 1;
-
-    font = vwk->real_address->writing.first_font;
-    for (number -= 2; number >= 0; number--)
-        font = font->next;
+    font = find_font_by_index(vwk, index);
 
     font_name = (const unsigned char *)font->name;
     for (i = 31; i >= 0; i--)
@@ -259,40 +294,31 @@ void CDECL lib_vqt_xfntinfo(Virtual *vwk, long flags, long id, long index, XFNT_
 {
     int i;
     Fontheader *font;
-
-    font = vwk->real_address->writing.first_font;
+    long actualindex;
 
     if (index)
     {
-        for (i = (int) index - 1; i >= 0; i--)
-        {
-            if ((font = font->next) == NULL)
-                break;
-        }
-        if (font)
-        {
-            id = font->id;
-        }
+        font = find_font_by_index(vwk, index);
+        info->id = font->id;
+        info->index = index;
     } else if (id)
     {
-        index = 1;
+        font = find_font_by_id(vwk->real_address->writing.first_font, id, &actualindex);
+        if (font)
+        {
+            info->id = font->id;
+            info->index = actualindex;
+        }
     } else
     {
+        font = vwk->real_address->writing.first_font;
         if (!vwk->text.current_font)
         {
             set_current_font(vwk, font);
         }
-        id = vwk->text.current_font->id;
-        index = 1;
+        info->id = vwk->text.current_font->id;
+        info->index = 1;
     }
-
-    while (font && (id > font->id))
-    {
-        font = font->next;
-        index++;
-    }
-    if (font && (id != font->id))
-        font = 0;
 
     if (!font)
     {
@@ -303,8 +329,6 @@ void CDECL lib_vqt_xfntinfo(Virtual *vwk, long flags, long id, long index, XFNT_
     }
 
     info->format = font->extra.format;
-    info->id = id;
-    info->index = index;
 
     if ((font->flags & FONTF_EXTERNAL) && external_xfntinfo)
     {
