@@ -17,11 +17,15 @@
 #include FT_GLYPH_H
 #include FT_SYNTHESIS_H
 #include FT_STROKER_H
+#include FT_SFNT_NAMES_H
+#include FT_TRUETYPE_IDS_H
 #else
 #include <freetype/freetype.h>
 #include <freetype/ftglyph.h>
 #include <freetype/ftsynth.h>	/* FT_GlyphSlot_Embolden */
 #include <freetype/ftstroke.h>	/* FT_Stroker, ... */
+#include <freetype/ftsnames.h>
+#include <freetype/ttnameid.h>
 #endif
 
 /* Appeared in FreeType 2.6.x */
@@ -424,6 +428,182 @@ static short ft2_get_face_id(Virtual *vwk, FT_Face face)
 
 
 /*
+ * Find a matching name/platform/encoding name for the face.
+ * All matches are exact, except you can ignore encoding using -1
+ */
+static int ft2_find_sfnt_name(FT_Face face, int name_id, int platform_id, int encoding_id, FT_SfntName *result)
+{
+    FT_SfntName name;
+    FT_UInt count, i;
+
+    count = FT_Get_Sfnt_Name_Count(face);
+
+    for (i = 0; i < count; i++)
+    {
+        if (FT_Get_Sfnt_Name(face, i, &name) != 0)
+            continue;
+
+        if (name.name_id == name_id &&
+            name.platform_id == platform_id &&
+            (encoding_id < 0 || name.encoding_id == encoding_id))
+        {
+            int matched = 0;
+            switch (name.platform_id)
+            {
+                case TT_PLATFORM_MICROSOFT:
+                    if (name.language_id == TT_MS_LANGID_ENGLISH_UNITED_STATES ||
+                        name.language_id == TT_MS_LANGID_ENGLISH_UNITED_KINGDOM)
+                        matched = 1;
+                    break;
+                case TT_PLATFORM_MACINTOSH:
+                case TT_PLATFORM_APPLE_UNICODE:
+                    if (name.language_id == TT_MAC_LANGID_ENGLISH)
+                        matched = 1;
+                    break;
+                default:
+                    break;
+            }
+            if (matched)
+            {
+                *result = name;
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+
+/* Convert Unicode (UCS-2) to Atari ASCII (quick and dirty) */
+static const char *ft2_ucs2_to_atari(FT_SfntName *name)
+{
+    int len = name->string_len / 2;
+    char *ascii = malloc(len + 1);
+    if (ascii == NULL)
+        return NULL;
+
+    unsigned char *d = (unsigned char *)ascii;
+    for (int i = 0; i < len; i++)
+    {
+        if (name->string[2 * i] == 0)
+        {
+            unsigned char c = (unsigned char)name->string[2 * i + 1];
+            switch (c)
+            {
+                case 0x20 ... 0x7e:
+                case '\r':
+                case '\n':
+                case '\t':
+                    *d++ = c;
+                    break;
+                case 0xa9:  /* copyright */
+                    *d++ = 189;
+                    break;
+                case 0xae:  /* registered sign */
+                    *d++ = 190;
+                    break;
+                case 0xc4:  /* capital a with diaresis */
+                    *d++ = 142;
+                    break;
+                case 0xd6:  /* capital o with diaresis */
+                    *d++ = 153;
+                    break;
+                case 0xdc:  /* capital u with diaresis */
+                    *d++ = 154;
+                    break;
+                case 0xe4:  /* lower a with diaresis */
+                    *d++ = 132;
+                    break;
+                case 0xf6:  /* lower o with diaresis */
+                    *d++ = 148;
+                case 0xfc:  /* lower u with diaresis */
+                    *d++ = 129;
+                    break;
+                default:
+                    *d++ = '?';
+            }
+        } else
+        {
+            *d++ = '?';
+        }
+    }
+    *d = 0;
+    return ascii;
+}
+
+
+/* Convert Mac Roman to Atari ASCII (quick and dirty) */
+static const char *ft2_mac_roman_to_atari(FT_SfntName *name)
+{
+    char *ascii = malloc(name->string_len + 1);
+    if (ascii == NULL)
+        return NULL;
+
+    unsigned char *d = (unsigned char *)ascii;
+    for (int i = 0; i < name->string_len; i++)
+    {
+        unsigned char c = (unsigned char)name->string[i];
+        switch (c)
+        {
+            case 0x20 ... 0x7e:
+            case '\r':
+            case '\n':
+            case '\t':
+                *d++ = c;
+                break;
+            case 0xa9:  /* copyright */
+                *d++ = 189;
+                break;
+            case 0xa8:  /* registered sign */
+                *d++ = 190;
+                break;
+            case 0x80:  /* capital a with diaresis */
+                *d++ = 142;
+                break;
+            case 0x85:  /* capital o with diaresis */
+                *d++ = 153;
+                break;
+            case 0x86:  /* capital u with diaresis */
+                *d++ = 154;
+                break;
+            case 0x8a:  /* lower a with diaresis */
+                *d++ = 132;
+                break;
+            case 0x9a:  /* lower o with diaresis */
+                *d++ = 148;
+            case 0x9f:  /* lower u with diaresis */
+                *d++ = 129;
+                break;
+            default:
+                *d++ = '?';
+        }
+    }
+    *d = 0;
+    return ascii;
+}
+
+
+static const char *ft2_get_name(FT_Face face, int name_id)
+{
+    FT_SfntName name;
+    char *ascii = NULL;
+
+    /* Most fonts are MICROSOFT + UNICODE + (english) so check that first */
+    if (ft2_find_sfnt_name(face, name_id, TT_PLATFORM_MICROSOFT, TT_MS_ID_UNICODE_CS, &name) ||
+        ft2_find_sfnt_name(face, name_id, TT_PLATFORM_APPLE_UNICODE, -1, &name))
+    {
+        return ft2_ucs2_to_atari(&name);
+    }
+    /* Very old Apple fonts might be this */
+    if (ft2_find_sfnt_name(face, name_id, TT_PLATFORM_MACINTOSH, TT_MAC_ID_ROMAN, &name))
+    {
+        return ft2_mac_roman_to_atari(&name);
+    }
+    return NULL;
+}
+
+
+/*
  * Load a font and make it ready for use
  */
 Fontheader *ft2_load_font(Virtual *vwk, const char *filename)
@@ -432,6 +612,7 @@ Fontheader *ft2_load_font(Virtual *vwk, const char *filename)
 #if FREETYPE_VERSION >= 2006000L
     const char *font_format;
 #endif
+    const char *s;
 
     int len = (int) strlen(filename);
 
@@ -475,14 +656,16 @@ Fontheader *ft2_load_font(Virtual *vwk, const char *filename)
         /* Clear the structure */
         memset(font, 0, sizeof(Fontheader));
 
-        /* Construct the font->name = family_name + style_name */
+        /* Best practice conveniently keeps this <= 32 chars */
+        s = ft2_get_name(face, TT_NAME_ID_FULL_NAME);
+        if (s)
         {
-            char buf[255];
-
-            strcpy(buf, face->family_name);
-            strcat(buf, " ");
-            strcat(buf, face->style_name);		/* FIXME: Concatenate? */
-            strncpy(font->name, buf, 32);		/* Family name would be the font name? */
+            strncpy(font->name, s, sizeof(font->name));
+            free((void *)s);
+        } else
+        {
+            free(font);
+            return NULL;
         }
 
 #if FREETYPE_VERSION >= 2006000L
@@ -679,6 +862,7 @@ static Fontheader *ft2_dup_font(Virtual *vwk, Fontheader *src, short ptsize)
 void ft2_fontheader(Virtual *vwk, Fontheader *font, VQT_FHDR *fhdr)
 {
     int i;
+    const char *s;
     FT_Face face = ft2_get_face(vwk, font);
 
     /* Strings should not have NUL termination if max size. */
@@ -696,12 +880,8 @@ void ft2_fontheader(Virtual *vwk, Fontheader *font, VQT_FHDR *fhdr)
     fhdr->fh_hedsz = sizeof(VQT_FHDR);  /* Header size */
     fhdr->fh_fntid = 0;     /* Font ID (Bitstream) */
     fhdr->fh_sfvnr = 0;     /* Font version number */
-    for (i = 0; i < 32; i++)
-    {
-        /* Font full name (vqt_name) */
-        fhdr->fh_fntnm[i] = font->name[i];
-    }
-    fhdr->fh_fntnm[i] = 0;
+    memcpy(fhdr->fh_fntnm, font->name, sizeof(font->name));  /* vqt_name */
+    fhdr->fh_fntnm[sizeof(font->name)] = 0;
     fhdr->fh_mdate[0] = 0;  /* Manufacturing date (DD Mon YY) */
     fhdr->fh_laynm[0] = 0;  /* Character set name, vendor ID, character set ID */
     /* Last two is char set, usually the second two characters in font filename
@@ -766,15 +946,22 @@ void ft2_fontheader(Virtual *vwk, Fontheader *font, VQT_FHDR *fhdr)
      */
     if (face->style_flags & FT_STYLE_FLAG_BOLD)
         fhdr->fh_frmcl = (fhdr->fh_frmcl & 0x0f) | 0xa0;
-    /* The below should likely include "Italic" etc */
-    strncpy(fhdr->fh_sfntn, font->name, /* Short font name */
-            sizeof(fhdr->fh_sfntn));
-    /* Abbreviation of Postscript equivalent font name */
-    strncpy(fhdr->fh_sfacn, face->family_name,  /* Short face name */
-            sizeof(fhdr->fh_sfacn));
+
+    /* Postscript font name */
+    s = ft2_get_name(face, TT_NAME_ID_PS_NAME);
+    if (s)
+    {
+        strncpy(fhdr->fh_sfntn, s, sizeof(fhdr->fh_sfntn));
+        free((void *)s);
+    } else
+        fhdr->fh_sfntn[0] = 0;
+
     /* Abbreviation of the typeface family name */
-    strncpy(fhdr->fh_fntfm, face->style_name,  /* Font form (as above), style */
-            sizeof(fhdr->fh_fntfm));
+    strncpy(fhdr->fh_sfacn, face->family_name, sizeof(fhdr->fh_sfacn));
+
+    /* The below should likely include "Italic" etc */
+    strncpy(fhdr->fh_fntfm, face->style_name, sizeof(fhdr->fh_fntfm));
+
     fhdr->fh_itang = 0;     /* Italic angle */
     /* Skew in 1/256 of degrees clockwise, if italic font */
     fhdr->fh_orupm = face->units_per_EM;  /* ORUs per Em */
