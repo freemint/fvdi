@@ -214,8 +214,6 @@ static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face
 
     if (FT_IS_SCALABLE(face))
     {
-        FT_Fixed scale;
-
         /* Set the character size and use default DPI (72) */
 #if 1
         if (!ptsize)
@@ -235,14 +233,15 @@ static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face
             return NULL;
         }
 
-        scale = face->size->metrics.y_scale;
-        font->distance.ascent = FT_CEIL(FT_MulFix(face->ascender, scale));
-        font->distance.descent = FT_CEIL(FT_MulFix(-face->descender, scale));
-        font->distance.top = FT_CEIL(FT_MulFix(face->bbox.yMax, scale));
-        font->distance.bottom = FT_CEIL(FT_MulFix(-face->bbox.yMin, scale));
-        font->height = FT_CEIL(FT_MulFix(face->bbox.yMax - face->bbox.yMin, scale));
+        font->distance.top = FT_CEIL(face->size->metrics.ascender);
+        font->distance.ascent = font->distance.top;
+        font->distance.half = FT_CEIL(face->size->metrics.ascender / 2);
+        font->distance.descent = FT_CEIL(-face->size->metrics.descender);
+        font->distance.bottom = font->distance.descent;
+        font->height = FT_CEIL((face->size->metrics.ascender - face->size->metrics.descender));
 
         /* This gives us weird values - perhaps caused by taking care of unusual characters out of Latin-1 charset */
+        FT_Fixed scale = face->size->metrics.y_scale;
         font->widest.cell = FT_CEIL(FT_MulFix(face->bbox.xMax - face->bbox.xMin, face->size->metrics.x_scale));
         font->widest.character = FT_CEIL(FT_MulFix(face->max_advance_width, face->size->metrics.x_scale));
 
