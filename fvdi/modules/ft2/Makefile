@@ -35,7 +35,20 @@ subdir      = ft2
 
 include $(top_srcdir)/CONFIGVARS
 
-CFLAGS = $(CPUOPTS) $(OPTS) $(FT2_WARNINGS) $(FT2_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/modules/include -I$(ft2_srcdir)/src
+ifndef FREETYPE_VERSION
+ifneq (,$(wildcard $(ft2_srcdir)/include/freetype/freetype.h))
+	FREETYPE_MAJOR := $(shell sed -n -e '/define FREETYPE_MAJOR/s/[^0-9]*//p' $(ft2_srcdir)/include/freetype/freetype.h)
+	FREETYPE_MINOR := $(shell sed -n -e '/define FREETYPE_MINOR/s/[^0-9]*//p' $(ft2_srcdir)/include/freetype/freetype.h)
+	FREETYPE_PATCH := $(shell sed -n -e '/define FREETYPE_PATCH/s/[^0-9]*//p' $(ft2_srcdir)/include/freetype/freetype.h)
+else ifneq (,$(wildcard $(ft2_srcdir)/include/freetype.h))
+	FREETYPE_MAJOR := $(shell sed -n -e '/define FREETYPE_MAJOR/s/[^0-9]*//p' $(ft2_srcdir)/include/freetype.h)
+	FREETYPE_MINOR := $(shell sed -n -e '/define FREETYPE_MINOR/s/[^0-9]*//p' $(ft2_srcdir)/include/freetype.h)
+	FREETYPE_PATCH := $(shell sed -n -e '/define FREETYPE_PATCH/s/[^0-9]*//p' $(ft2_srcdir)/include/freetype.h)
+endif
+FREETYPE_VERSION := $(shell printf "%d%03d%03dL" $(FREETYPE_MAJOR) $(FREETYPE_MINOR) $(FREETYPE_PATCH))
+endif
+
+CFLAGS = $(CPUOPTS) $(OPTS) $(FT2_WARNINGS) $(FT2_CFLAGS) -DFREETYPE_VERSION=$(FREETYPE_VERSION) -I$(top_srcdir)/include -I$(top_srcdir)/modules/include -I$(ft2_srcdir)/src
 
 #
 # FreeType2 library base

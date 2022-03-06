@@ -43,14 +43,25 @@
 
 #include <ft2build.h>
 #include <freetype/config/ftconfig.h>
+
 #ifdef FT_FREETYPE_H
 #include FT_FREETYPE_H
+#if FREETYPE_VERSION <= 2010002L
 #include FT_INTERNAL_INTERNAL_H
 #include FT_INTERNAL_DEBUG_H
 #else
+#include <freetype/internal/compiler-macros.h>
+#include <freetype/internal/ftdebug.h>
+#endif
+#else
 #include <freetype/freetype.h>
+#if FREETYPE_VERSION <= 2010002L
 #include <freetype/internal/internal.h>
 #include <freetype/internal/ftdebug.h>
+#else
+#include <freetype/internal/compiler-macros.h>
+#include <freetype/internal/ftdebug.h>
+#endif
 #endif
 
 #include "globals.h"
