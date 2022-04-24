@@ -527,13 +527,13 @@ void CDECL lib_vqt_extent(Virtual *vwk, long length, short *string, short *point
                 width += char_tab[ch + 1] - char_tab[ch];
         }
 
-        if (vwk->text.effects & 0x01)
+        if (vwk->text.effects & 0x01)   /* Thickened */
             width += vwk->text.current_font->thickening;
 
-        if (vwk->text.effects & 0x10)   /* Outline */
+        if (vwk->text.effects & 0x10)   /* Outlined */
             width += 2;
 
-        if (!(vwk->text.effects & 0x04))
+        if (vwk->text.effects & 0x04)   /* Skewed */
         {
             unsigned short skewing = vwk->text.current_font->skewing;
             short height = vwk->text.current_font->height;
