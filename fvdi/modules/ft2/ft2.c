@@ -76,6 +76,8 @@ typedef struct cached_glyph
 
 
 /* Handy routines for converting from fixed point */
+#define FIX31_TO_FT26P6(X) (((X) + 0x8000) >> 10)
+#define FT26P6_TO_FIX31(X) ((X) << 10)
 #define FT_FLOOR(X)	((X & -64) / 64)
 #define FT_CEIL(X)	(((X + 63) & -64) / 64)
 
@@ -106,7 +108,7 @@ typedef struct {
 
 
 static FT_Error ft2_find_glyph(Virtual *vwk, Fontheader *font, short ch, int want);
-static Fontheader *ft2_dup_font(Virtual *vwk, Fontheader *src, short ptsize);
+static Fontheader *ft2_dup_font(Virtual *vwk, Fontheader *src, fix31 ptsize);
 static void ft2_dispose_font(Fontheader *font);
 
 #define USE_FREETYPE_ERRORS 1
@@ -203,7 +205,7 @@ static void ft2_close_face(Fontheader *font)
     if (debug > 1)
     {
         PRINTF(("FT2 close_face: %s\n", font->extra.filename));
-        PRINTF(("%s, size: %d\n", ((FT_Face) font->extra.unpacked.data)->family_name, font->size));
+        PRINTF(("%s, size: %08lx\n", ((FT_Face) font->extra.unpacked.data)->family_name, font->extra.size));
     }
 #endif
 
@@ -212,7 +214,7 @@ static void ft2_close_face(Fontheader *font)
 }
 
 
-static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face, short ptsize)
+static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face, fix31 ptsize)
 {
     FT_Error error;
 
@@ -223,11 +225,10 @@ static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face
         if (!ptsize)
         {
             access->funcs.puts("Attempt to load metrics with bad point size!\n");
-            ptsize = 10;
+            ptsize = SHORT_TO_FIX31(10);
         }
 #endif
-
-        error = FT_Set_Char_Size(face, 0, ptsize * 64,
+        error = FT_Set_Char_Size(face, 0, FIX31_TO_FT26P6(ptsize),
                                  25400 / vwk->real_address->screen.pixel.width,
                                  25400 / vwk->real_address->screen.pixel.height);
         if (error)
@@ -255,6 +256,7 @@ static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face
     {
         int pick = 0;
         int s;
+        short ptsize26p6 = FIX31_TO_FT26P6(ptsize);
 
         /* Find the required font size in the bitmap face (if present) */
         if (debug > 1)
@@ -264,23 +266,23 @@ static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face
 
         for (s = 0; s < face->num_fixed_sizes; s++)
         {
-            short size = face->available_sizes[s].size / 64;
+            short size26p6 = face->available_sizes[s].size;
 
             if (debug > 1)
             {
-                PRINTF((", %d [%ld,%ld] ", size, (long) face->available_sizes[s].width, (long) face->available_sizes[s].height));
+                PRINTF((", %08lx [%ld,%ld] ", size26p6, (long) face->available_sizes[s].width, (long) face->available_sizes[s].height));
             }
 
             /* Find the closest font size available */
-            if (ptsize - face->available_sizes[pick].size / 64 > ptsize - size)
+            if (ptsize26p6 - face->available_sizes[pick].size > ptsize26p6 - size26p6)
                 pick = s;
 
-            if (ptsize >= size / 64)
+            if (ptsize26p6 >= size26p6)
                 break;
         }
         if (debug > 1)
         {
-            PRINTF((" => %ld\n", (long) face->available_sizes[pick].size / 64));
+            PRINTF((" => %08lx\n", (long) face->available_sizes[pick].size));
         }
 
 #if FREETYPE_VERSION >= 2002000L
@@ -318,7 +320,7 @@ static Fontheader *ft2_load_metrics(Virtual *vwk, Fontheader *font, FT_Face face
         font->skewing = (int) (0.207f * font->height + 1 /* ceiling */ );
     }
 
-    font->size = ptsize;
+    font->extra.size = ptsize;
     font->extra.effects = vwk->text.effects & FT2_EFFECTS_MASK;
     font->lightening = 0xaaaa; /* Set the mask to apply to the glyphs */
 
@@ -692,15 +694,15 @@ Fontheader *ft2_load_font(Virtual *vwk, const char *filename)
 
         if (!face->num_fixed_sizes)
         {
-            font->size = 0;				/* Vector fonts have size = 0 */
+            font->extra.size = 0;           /* Vector fonts have size = 0 */
         } else
         {
-            font->size = face->available_sizes[0].size / 64;	/* Bitmap font size */
+            font->extra.size = FT26P6_TO_FIX31(face->available_sizes[0].size);	/* Bitmap font size */
         }
 
         if (debug > 0)
         {
-            PRINTF(("FT2 load_font: %s: size=%ld\n", font->name, (long) font->size));
+            PRINTF(("FT2 load_font: %s: size=%08lx\n", font->name, (long) font->extra.size));
         }
 
         /* By default faces should not be kept in memory... (void *)face */
@@ -736,7 +738,7 @@ Fontheader *ft2_load_font(Virtual *vwk, const char *filename)
 }
 
 
-static Fontheader *ft2_open_face(Virtual *vwk, Fontheader *font, short ptsize)
+static Fontheader *ft2_open_face(Virtual *vwk, Fontheader *font, fix31 ptsize)
 {
     FT_Error error;
     FT_Face face;
@@ -813,10 +815,10 @@ static FT_Face ft2_get_face(Virtual *vwk, Fontheader *font)
     /* Open the face if needed */
     if (!font->extra.unpacked.data)
     {
-        if (font->size)
-            font = ft2_open_face(vwk, font, font->size);
+        if (font->extra.size)
+            font = ft2_open_face(vwk, font, font->extra.size);
         else
-            font = ft2_open_face(vwk, font, 10);
+            font = ft2_open_face(vwk, font, SHORT_TO_FIX31(10));
     }
 
     if (!font)
@@ -826,7 +828,7 @@ static FT_Face ft2_get_face(Virtual *vwk, Fontheader *font)
 }
 
 
-static Fontheader *ft2_dup_font(Virtual *vwk, Fontheader *src, short ptsize)
+static Fontheader *ft2_dup_font(Virtual *vwk, Fontheader *src, fix31 ptsize)
 {
     Fontheader *font = (Fontheader *) malloc(sizeof(Fontheader));
 
@@ -847,7 +849,7 @@ static Fontheader *ft2_dup_font(Virtual *vwk, Fontheader *src, short ptsize)
 #ifdef DEBUG_FONTS
         if (debug > 1)
         {
-            PRINTF(("FT2  dup_font: %s, size: %d\n", font->name, ptsize));
+            PRINTF(("FT2  dup_font: %s, size: %08lx\n", font->name, ptsize));
         }
 #endif
 
@@ -2241,7 +2243,7 @@ static MFDB *ft2_text_render(Virtual *vwk, Fontheader *font, const short *text, 
  * different sizes of FreeType2 fonts loaded in the beginning
  * (which are maintained in the global font list normally).
  **/
-static Fontheader *ft2_find_fontsize(Virtual *vwk, Fontheader *font, short ptsize)
+static Fontheader *ft2_find_fontsize(Virtual *vwk, Fontheader *font, fix31 ptsize)
 {
     static short font_count = 0;
     Fontheader *f;
@@ -2252,17 +2254,17 @@ static Fontheader *ft2_find_fontsize(Virtual *vwk, Fontheader *font, short ptsiz
         /* Not a scalable font:
          *   Fall back to the common add way of finding the right font size */
         f = font->extra.first_size;
-        while (f->extra.next_size && (f->extra.next_size->size <= ptsize))
+        while (f->extra.next_size && (f->extra.next_size->extra.size <= ptsize))
         {
             f = f->extra.next_size;
         }
         /* Set the closest available bitmap font size */
-        ptsize = f->size;
+        ptsize = f->extra.size;
     }
 
     if (debug > 2)
     {
-        PRINTF(("FT2 looking for cached_font: id=%ld size=%d eff=%d\n", (long) font->id, ptsize, vwk->text.effects));
+        PRINTF(("FT2 looking for cached_font: id=%ld size=%08lx eff=%d\n", (long) font->id, ptsize, vwk->text.effects));
     }
 
     /* LRU: put the selected font to the front of the list */
@@ -2273,11 +2275,11 @@ static Fontheader *ft2_find_fontsize(Virtual *vwk, Fontheader *font, short ptsiz
         {
             if (debug > 2)
             {
-                PRINTF(("FT2 cached_font: id==%ld size=%ld eff=%d\n", (long) i->font->id, (long) i->font->size, i->font->extra.effects));
+                PRINTF(("FT2 cached_font: id=%ld size=%08lx eff=%d\n", (long) i->font->id, (long) i->font->extra.size, i->font->extra.effects));
             }
     
             if (i->font->id == font->id &&
-                i->font->size == ptsize &&
+                i->font->extra.size == ptsize &&
                 i->font->extra.effects == (vwk->text.effects & FT2_EFFECTS_MASK))
             {
                 listRemove((LINKABLE *) i);
@@ -2289,7 +2291,7 @@ static Fontheader *ft2_find_fontsize(Virtual *vwk, Fontheader *font, short ptsiz
 
     if (debug > 1)
     {
-        PRINTF(("FT2 find_font: fetch size=%d\n", ptsize));
+        PRINTF(("FT2 find_font: fetch size=%08lx\n", ptsize));
     }
 
     /* FIXME: handle maximum number of fonts in the cache here (configurable) */
@@ -2361,11 +2363,11 @@ long ft2_text_render_default(Virtual *vwk, unsigned long coords, short *s, long 
 #endif
 
     /* FIXME: this should not happen once we have all the font id/size setup routines intercepted */
-    if (!font->size)
+    if (!font->extra.size)
     {
         PUTS("FT2 RENDERER CALLED FOR 0 size: text_render_default font->size == 0\n");
         /* Create a copy of the font for the particular size */
-        font = ft2_find_fontsize(vwk, font, 16);
+        font = ft2_find_fontsize(vwk, font, SHORT_TO_FIX31(16));
         if (!font)
         {
             PUTS("Cannot open face\n");
@@ -2455,7 +2457,7 @@ long ft2_set_effects(Virtual *vwk, Fontheader *font, long effects)
     vwk->text.effects = effects;
 
     /* Update the font metrics after effects change */
-    font = ft2_find_fontsize(vwk, font, font->size);
+    font = ft2_find_fontsize(vwk, font, font->extra.size);
 
     /* Assign and update the ref_counts */
     if (vwk->text.current_font != font && font)
@@ -2470,30 +2472,31 @@ long ft2_set_effects(Virtual *vwk, Fontheader *font, long effects)
 }
 
 
-Fontheader *ft2_vst_point(Virtual *vwk, long ptsize, short *sizes)
+Fontheader *ft2_vst_point(Virtual *vwk, fix31 ptsize, short *sizes)
 {
     Fontheader *font = vwk->text.current_font;
     short i = 1;
 
-    if (font->size == ptsize)
+    if (font->extra.size == ptsize)
         return font;
 
-    if (ptsize > 32000)
-        ptsize = 32000;
+    if (ptsize > SHORT_TO_FIX31(32000))
+        ptsize = SHORT_TO_FIX31(32000);
 
     if (sizes == NULL || sizes[0] == -1)
     {
-        PRINTF(("No search for size %ld\n", ptsize));
+        PRINTF(("No search for size %08lx\n", ptsize));
     }
     else
     {
-        PRINTF(("Searching $%08lx for %ld: ", (long) sizes, ptsize));
-        while (sizes[i] <= ptsize && sizes[i] != -1)
+        short size = FIX31_TO_SHORT(ptsize);
+        PRINTF(("Searching $%08lx for %08lx: ", (long) sizes, ptsize));
+        while (sizes[i] <= size && sizes[i] != -1)
         {
             i++;
         }
-        ptsize = sizes[i - 1];
-        PRINTF(("%ld\n", ptsize));
+        ptsize = SHORT_TO_FIX31(sizes[i - 1]);
+        PRINTF(("%08lx\n", ptsize));
     }
 
     /* NEED to update metrics to be up-to-date immediately after vst_point() */

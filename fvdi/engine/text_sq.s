@@ -854,7 +854,7 @@ vst_height:
 	movem.l	d0-d2/a0-a2,-(a7)
 	move.l	_vdi_stack_size,-(a7)
 	move.l	#0,-(a7)
-	ext.l	d0
+	ext.l   d0
 	move.l	d0,-(a7)
 	move.l	a0,-(a7)			; VDI struct
 	jsr	(a3)
@@ -925,9 +925,17 @@ vst_arbpt:
 	pea	4(a2)
 	pea	2(a2)
 	pea	0(a2)
+	move.l  control(a1),a2
+	cmp.w   #2,L_intin(a2)     ; 2 = vst_arbpt32(), 1 = vst_arbpt()
 	move.l	intin(a1),a2
+	bne     short_height
+	move.l  (a2),d0
+	bra     got_height
+short_height:
 	move.w	(a2),d0
 	ext.l	d0
+	swap    d0
+got_height:
 	move.l	d0,-(a7)
 	move.l	a0,-(a7)
 	jsr	_lib_vst_arbpt
@@ -936,8 +944,16 @@ vst_arbpt:
   endc
 	add.w	#6*4,a7
 	movem.l	(a7)+,d2/a1
+	move.l  control(a1),a2
+	cmp.w   #2,L_intin(a2)     ; 2 = vst_arbpt32(), 1 = vst_arbpt()
 	move.l	intout(a1),a2
+	bne     short_return
+    move.l  d0,(a2)
+	bra     got_return
+short_return:
+    swap    d0
 	move.w	d0,(a2)
+got_return:
 	used_d1
 	done_return
 
@@ -945,7 +961,7 @@ vst_arbpt:
 	uses_d1
 	move.l	a3,-(a7)
 	move.l	intin(a1),a2
-	move.w	(a2),d0
+	short_to_fix31 (a2),d0
 	move.l	vwk_text_current_font(a0),a2
 
 * Some other method should be used for this!
@@ -963,7 +979,6 @@ vst_arbpt:
 	movem.l	d0-d2/a0-a2,-(a7)
 	move.l	_vdi_stack_size,-(a7)
 	move.l	#0,-(a7)
-	ext.l	d0
 	move.l	d0,-(a7)
 	move.l	a0,-(a7)			; VDI struct
 	jsr	(a3)
@@ -991,7 +1006,8 @@ vst_arbpt:
 	move.w	font_height(a3),d1
 	move.w	d1,(a2)+			; Height in pixels
 	move.l	d1,vwk_text_cell(a0)		; Cell w/h in vwk
-	move.w	font_size(a3),(a1)
+	move.l  font_extra_size(a3),d1
+	fix31_to_short d1,(a1)
 
 .no_external_vst_arbpt:
 	move.l	(a7)+,a3
@@ -1014,8 +1030,7 @@ vst_point:
 	pea	2(a2)
 	pea	0(a2)
 	move.l	intin(a1),a2
-	move.w	(a2),d0
-	ext.l	d0
+	short_to_fix31 (a2),d0
 	move.l	d0,-(a7)
 	move.l	a0,-(a7)
 	jsr	_lib_vst_point
@@ -1025,7 +1040,7 @@ vst_point:
 	add.w	#6*4,a7
 	movem.l	(a7)+,d2/a1
 	move.l	intout(a1),a2
-	move.w	d0,(a2)
+	fix31_to_short d0,(a2)
 	used_d1
   ifne 0
 	move.l	vwk_text_current_font(a0),a0
@@ -1044,7 +1059,7 @@ vst_point:
 	uses_d1
 	move.l	a3,-(a7)
 	move.l	intin(a1),a2
-	move.w	(a2),d0
+	short_to_fix31 (a2),d0
 	move.l	vwk_text_current_font(a0),a2
 
 * Some other method should be used for this!
@@ -1054,7 +1069,7 @@ vst_point:
 	move.l	font_extra_first_size(a2),a2
 	move.l	a2,a3
  label .search,1
-	cmp.w	font_size(a2),d0
+	cmp.l	font_extra_size(a2),d0
 	lblo	.found,2
 	move.l	a2,a3
 	move.l	font_extra_next_size(a2),a2
@@ -1082,7 +1097,8 @@ vst_point:
 	move.w	font_height(a3),d1
 	move.w	d1,(a2)+			; Height in pixels
 	move.l	d1,vwk_text_cell(a0)		; Cell w/h in vwk
-	move.w	font_size(a3),(a1)
+	move.l  font_extra_size(a3),d1
+	fix31_to_short d1,(a1)
 	move.l	(a7)+,a3
 	used_d1
   ifne 0
@@ -1110,8 +1126,7 @@ vst_point:
 	movem.l	d0-d2/a0-a2,-(a7)
 	move.l	_vdi_stack_size,-(a7)
 	pea	_sizes
-	ext.l	d0
-	move.l	d0,-(a7)
+	short_to_fix31 d0,-(a7)
 	move.l	a0,-(a7)			; VDI struct
 	jsr	(a3)
 	add.w	#4*4,a7

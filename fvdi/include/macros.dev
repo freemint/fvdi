@@ -40,6 +40,27 @@ done_return	macro
   endc
 	endm
 
+* Convert from a 16 bit size to fix31
+short_to_fix31	macro
+  ifc \1,\2
+	swap	\2
+	clr.w	\2
+  else
+	moveq	#0,\2
+	move.w	\1,\2
+	swap	\2
+  endc
+	endm
+
+* Convert from fix31 to a 16 bit size, rounding up
+fix31_to_short	macro
+	addi.l	#$8000,\1
+	swap	\1
+  ifnc \1,\2
+	move.w	\1,\2
+  endc
+	endm
+
 ijsr	macro	indirect
   ifd mc68000
 	pea	\@

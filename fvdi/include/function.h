@@ -75,7 +75,7 @@ void init_interrupts(void);
 void reset_interrupts(void);
 
 int lib_vst_font(Virtual *vwk, long fontID);
-int lib_vst_point(Virtual *vwk, long height, short *charw, short *charh, short *cellw, short *cellh);
+fix31 lib_vst_point(Virtual *vwk, fix31 height, short *charw, short *charh, short *cellw, short *cellh);
 void lib_vrt_cpyfm_nocheck(Virtual *vwk, short mode, short *pxy, MFDB *src, MFDB *dst, short colors[]);
 void lib_vro_cpyfm(Virtual *vwk, short mode, short *pxy, MFDB *src, MFDB *dst);
 void lib_vs_clip(Virtual *, short, short *);
@@ -91,7 +91,7 @@ long CDECL lib_vqt_name(Virtual * vwk, long number, short *name);
 void CDECL lib_vqt_fontinfo(Virtual *vwk, short *intout, short *ptsout);
 void CDECL lib_vqt_xfntinfo(Virtual *vwk, long flags, long id, long index, XFNT_INFO *info);
 void CDECL lib_vqt_fontheader(Virtual *vwk, VQT_FHDR *fhdr);
-int CDECL lib_vst_arbpt(Virtual *vwk, long height, short *charw, short *charh, short *cellw, short *cellh);
+fix31 CDECL lib_vst_arbpt(Virtual *vwk, fix31 height, short *charw, short *charh, short *cellw, short *cellh);
 void CDECL lib_vqt_attributes(Virtual * vwk, short *settings);
 unsigned short CDECL lib_vqt_char_index(Virtual *vwk, short *intin);
 short CDECL lib_vst_charmap(Virtual *vwk, long mode);
@@ -113,7 +113,7 @@ extern void (*external_term) (void);
 extern Fontheader* (*external_load_font)(Virtual *vwk, const char *font);
 extern long        (*external_vqt_extent)(Virtual *vwk, Fontheader *font, short *text, long length);
 extern long        (*external_vqt_width)(Virtual *vwk, Fontheader *font, long ch);
-extern Fontheader* (*external_vst_point)(Virtual *vwk, long size, short *sizes);
+extern Fontheader* (*external_vst_point)(Virtual *vwk, fix31 size, short *sizes);
 extern long        (*external_renderer)(Virtual *vwk, unsigned long coords,
                     short *text, long length);
 extern void*       (*external_char_bitmap)(Virtual *vwk, Fontheader *font, long ch, short *bitmap_info);

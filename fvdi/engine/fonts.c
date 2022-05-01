@@ -88,7 +88,7 @@ long DRIVER_EXPORT fixup_font(Fontheader *header, char *buffer, long flip)
 
     if (flip)
     {
-        flip_words(&header->id, (&header->size - &header->id) + 1);
+        flip_words(&header->id, (&header->dummy - &header->id) + 1);
         flip_words(&header->code.low, (&header->flags - &header->code.low) + 1);
         flip_longs(&header->table.horizontal,
                    ((long)&header->data - (long)&header->table.horizontal) / sizeof(long) + 1);
@@ -112,6 +112,7 @@ long DRIVER_EXPORT fixup_font(Fontheader *header, char *buffer, long flip)
     header->extra.distance.descent = -top - header->distance.descent;
     header->extra.distance.top = 0;
 
+    header->extra.size = SHORT_TO_FIX31(header->dummy);
     header->extra.format = 0x01;   /* 1 - Bitmap, 2 - Speedo etc */
 
     header->extra.unpacked.data = 0;    /* No smart formats yet */
@@ -175,7 +176,8 @@ Fontheader *load_font(const char *name)
 long DRIVER_EXPORT insert_font(Fontheader **first_font, Fontheader *new_font)
 {
     Fontheader *current_font, *last_font, **previous;
-    int new_id, new_size;
+    int new_id;
+    fix31 new_size;
 
     /*
      * Find first font with higher or equal ID
@@ -216,9 +218,9 @@ long DRIVER_EXPORT insert_font(Fontheader **first_font, Fontheader *new_font)
      * Find first font with larger or equal size
      */
 
-    new_size = new_font->size;
+    new_size = new_font->extra.size;
     last_font = 0;
-    while (current_font && (current_font->size < new_size))
+    while (current_font && (current_font->extra.size < new_size))
     {
         last_font = current_font;
         current_font = current_font->extra.next_size;

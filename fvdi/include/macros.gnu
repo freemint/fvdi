@@ -40,6 +40,27 @@
   .endif
 	.endm
 
+* Convert from a 16 bit size to fix31
+	.macro  short_to_fix31 src dst
+  .ifc	\src,\dst
+	swap	\dst
+	clr.w	\dst
+  .else
+	moveq	#0,\dst
+	move.w	\src,\dst
+	swap	\dst
+  .endif
+	.endm
+
+* Convert from fix31 to a 16 bit size, rounding up
+	.macro fix31_to_short src dst
+	addi.l	#0x8000,\src
+	swap	\src
+  .ifnc	\src,\dst
+	move.w	\src,\dst
+  .endif
+	.endm
+
 	.macro	ijsr indirect
   .if mc68000 == 1
 	pea	ret\@
