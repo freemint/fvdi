@@ -854,7 +854,7 @@ vst_height:
 	movem.l	d0-d2/a0-a2,-(a7)
 	move.l	_vdi_stack_size,-(a7)
 	move.l	#0,-(a7)
-	ext.l   d0
+	short_to_fix31 d0,d0
 	move.l	d0,-(a7)
 	move.l	a0,-(a7)			; VDI struct
 	jsr	(a3)
