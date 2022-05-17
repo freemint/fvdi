@@ -68,5 +68,6 @@ strip:
 clean:: clean_gnu
 	$(RM) $(OBJECTS) $(TARGET)
 
-install:
-	@:
+install::
+	mkdir -p $(DESTDIR)/gemsys
+	cp -a $(TARGET) $(DESTDIR)/gemsys/$(TARGET)
