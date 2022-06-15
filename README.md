@@ -5,7 +5,14 @@ Latest snapshot: [Download](https://tho-otto.de/snapshots/fvdi/)
 # fvdi
 fVDI fork with additional fixes and drivers.
 
-- builds for ColdFire (using [MicroAPL's PortAsm](http://microapl.com/Porting/ColdFire/pacf_download.html)) depending on CPU setting
-- CPU can be set with setting the CPU variable
-- Makefiles are sensitive to "CPU=v4e" (ColdFire build) or any other m68k-atari-mint CPU target ("000", "020", etc.)
-- to get truetype support: download a [freetype source archive](https://download.savannah.gnu.org/releases/freetype/), untar it somewhere, and create a symlink fvdi/modules/ft2/freetype to the top level directory
+## How to build
+```
+cd fvdi
+make CPU=<CPU type> V=1
+make CPU=<CPU type> DESTDIR=<install dir> install
+```
+
+Where `<CPU type>` is one of `v4e` (for ColdFire) or any other m68k-atari-mint
+CPU target (`000` for 68000, `020` for 68020 etc).
+
+To get truetype support: download a [freetype source archive](https://download.savannah.gnu.org/releases/freetype/), untar it somewhere, and create a symlink fvdi/modules/ft2/freetype to the top level directory.
