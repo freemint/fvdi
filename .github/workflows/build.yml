@@ -14,7 +14,7 @@ jobs:
         cpu_target: [ "000", "020", "v4e" ]
         ft2_version: [ "", "2.2.1", "2.5.2", "2.8.1", "2.10.2" ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install SSH keys
         if: ${{ github.event_name == 'push' }}
         env:
