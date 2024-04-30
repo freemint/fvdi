@@ -10,9 +10,11 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         cpu_target: [ "000", "020", "v4e" ]
         ft2_version: [ "", "2.2.1", "2.5.2", "2.8.1", "2.10.2" ]
+        cross_tool: [ "m68k-atari-mint" ]
     steps:
       - uses: actions/checkout@v4
       - name: Install SSH keys
@@ -22,9 +24,10 @@ jobs:
         run: ./.scripts/install_ssh_id.sh
       - name: Setup environment
         env:
+          PROJECT_VERSION: "0.96a"
           CPU_TARGET: ${{ matrix.cpu_target }}
           FT2_VERSION: ${{ matrix.ft2_version }}
-          PROJECT_VERSION: "0.96a"
+          CROSS_TOOL: ${{ matrix.cross_tool }}
         run: ./.scripts/setup_env.sh
       - name: Install packages
         run: |
