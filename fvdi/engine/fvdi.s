@@ -326,10 +326,10 @@ large_handle:
 	bra	.test_handle
 .search_handle:
 	move.l	(a0),a0
-	cmp.w	-6(a0),d0		; In this handle table?
-	blo	handle_ok
-	sub.w	-6(a0),d0
-	subq.l	#4,a0
+	cmp.w	2(a0),d0		; In this handle table?
+	blo	handle_found
+	sub.w	2(a0),d0
+	addq.l	#4,a0
 .test_handle:
 	tst.l	(a0)
 	bne	.search_handle
@@ -351,6 +351,9 @@ bad_handle:				; The handle definitely was bad
 	rts
 .bad_rte:
 	rte
+handle_found:
+	addq.l #8,a0
+	bra handle_ok
 
 .opnwk_ok:				; Fake handle/vwk when necessary
 	tst.w	_booted

@@ -15,8 +15,15 @@
 
 #define NEG_PAL_N	9	/* Number of negative palette entries */
 
-
-Virtual **handle_link = 0;
+/*
+ * attention: also accessed in fvdi.s
+ */
+struct extra_handles {
+	long count;
+	struct extra_handles *next;
+	Virtual *handles[62];
+};
+struct extra_handles *handle_link = 0;
 
 int lib_vq_extnd(Virtual *vwk, long subfunction, long flag, short *intout, short *ptsout);
 
@@ -81,12 +88,13 @@ void linea_setup(Workstation *wk)
 static Virtual **find_handle_entry(short hnd)
 {
     short handles;
-    Virtual **link;
+    struct extra_handles *link;
 
     handles = HANDLES;
     if (hnd < handles)
         return &handle[hnd];
 
+	/* attention: keep in sync with large_handle in fvdi.s */
     link = handle_link;
     while (link)
     {
@@ -95,13 +103,13 @@ static Virtual **find_handle_entry(short hnd)
         {
             PUTS("Looking for handle in extra table\n");
         }
-        handles = (long) link[-2];
+        handles = link->count;
         if (hnd < handles)
-            return &link[hnd];
-        link = (Virtual **) link[-1];
+            return &link->handles[hnd];
+        link = link->next;
     }
 
-    return 0;
+    return NULL;
 }
 
 
@@ -109,7 +117,8 @@ static Virtual **find_handle_entry(short hnd)
 static short find_free_handle(Virtual ***handle_entry)
 {
     short hnd, handles;
-    Virtual ***link, ***last, **handle_table;
+    struct extra_handles *link, **last;
+    Virtual **handle_table;
 
     handles = HANDLES;
     for (hnd = 1; hnd < handles; hnd++)
@@ -121,41 +130,46 @@ static short find_free_handle(Virtual ***handle_entry)
         }
     }
 
-    link = &handle_link;
-    last = link;
-    while ((handle_table = *link) != NULL)
+    last = &handle_link;
+    link = handle_link;
+    while (link != NULL)
     {
         if (debug)
         {
             PUTS("Looking for free handle in extra table\n");
         }
-        handles += (long)handle_table[-2];
-        for (; hnd < handles; hnd++)
+        handles += link->count;
+        handle_table = link->handles;
+        for (; hnd < handles; hnd++, handle_table++)
         {
-            if (handle_table[hnd] == non_fvdi_vwk)
+            if (*handle_table == non_fvdi_vwk)
             {
-                *handle_entry = &handle[hnd];
+                *handle_entry = handle_table;
                 return hnd;
             }
         }
-        last = link;
-        link = (Virtual ***)&handle_table[-1];
+        last = &link->next;
+        link = link->next;
     }
 
-    handle_table = (Virtual **)malloc(64 * sizeof(Virtual *));
-    if (handle_table)
+    handles = sizeof(link->handles) / sizeof(link->handles[0]);
+    /* be paranoid: don't allow VDI handles to overflow range of signed short */
+    if (hnd >= (short)((32767 - handles) / sizeof(void *)))
+        return 0;
+
+    link = (struct extra_handles *)malloc(sizeof(*link));
+    if (link)
     {
-        handles = 64;
         if (debug)
         {
             PRINTF(("Allocated space for %d extra handles\n", handles));
         }
-        handle_table[0] = (Virtual *)((long)handles);
-        handle_table[1] = 0;
-        for (handles--; handles >= 2; handles--)
-            handle_table[handles] = non_fvdi_vwk;
-        *last = &handle_table[2];
-        *handle_entry = &handle_table[2];
+        link->count = handles;
+        link->next = NULL;
+        for (; --handles >= 0; )
+            link->handles[handles] = non_fvdi_vwk;
+        *last = link;
+        *handle_entry = &link->handles[0];
         return hnd;
     }
 
