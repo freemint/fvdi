@@ -145,7 +145,7 @@ static short find_free_handle(Virtual ***handle_entry)
     handle_table = (Virtual **)malloc(64 * sizeof(Virtual *));
     if (handle_table)
     {
-        handles = *(long *)handle_table / sizeof(Virtual *) - 2;
+        handles = 64;
         if (debug)
         {
             PRINTF(("Allocated space for %d extra handles\n", handles));
@@ -391,15 +391,27 @@ void CDECL v_opnwk(VDIpars *pars)
             /* No pass-through without old GDOS */
             if ((hnd = find_free_handle(&handle_entry)) != 0)
             {
-                if ((vwk = malloc(6)) != NULL)
+#if __GNUC__ >= 14
+#pragma GCC diagnostic ignored "-Walloc-size"
+#endif
+                if ((vwk = malloc(sizeof(Workstation *) + sizeof(short))) != NULL)
+#if __GNUC__ >= 14
+#pragma GCC diagnostic warning "-Walloc-size"
+#endif
                 {
                     if ((oldhnd = call_other(pars, 0)) != 0)
                     {
                         /* Dummy handle for call */
                         failed = 0;
+#if __GNUC__ >= 11
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
                         vwk->real_address = non_fvdi_wk;
                         /* Mark as pass-through handle */
                         vwk->standard_handle = oldhnd | 0x8000;
+#if __GNUC__ >= 11
+#pragma GCC diagnostic warning "-Warray-bounds"
+#endif
                         *handle_entry = vwk;
                         pars->control->handle = hnd;
                     } else

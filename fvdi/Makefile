@@ -17,15 +17,15 @@ install::
 	done
 
 
-#GCC_14=/usr/bin/m68k-atari-mint-gcc-14
-#GCC_13=/usr/bin/m68k-atari-mint-gcc-13
-#GCC_12=/usr/bin/m68k-atari-mint-gcc-12
-#GCC_11=/usr/bin/m68k-atari-mint-gcc-11
-#GCC_10=/usr/bin/m68k-atari-mint-gcc-10
-GCC_9=/usr/bin/m68k-atari-mint-gcc-9
-GCC_8=/usr/bin/m68k-atari-mint-gcc-8
-GCC_7=/usr/bin/m68k-atari-mint-gcc-7
-GCC_4=/usr/bin/m68k-atari-mint-gcc-4
+GCC_14=m68k-atari-mint-gcc-14
+GCC_13=m68k-atari-mint-gcc-13
+GCC_12=m68k-atari-mint-gcc-12
+GCC_11=m68k-atari-mint-gcc-11
+GCC_10=m68k-atari-mint-gcc-10
+GCC_9=m68k-atari-mint-gcc-9
+GCC_8=m68k-atari-mint-gcc-8
+GCC_7=m68k-atari-mint-gcc-7
+GCC_4=m68k-atari-mint-gcc-4
 
 sizecheck:
 	@for ft2 in "" freetype-2.2.1 freetype-2.5.2 freetype-2.8.1 freetype-2.10.2; do \

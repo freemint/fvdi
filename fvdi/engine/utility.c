@@ -607,6 +607,10 @@ void *memchr(const void *s, long c, size_t n)
 
 long DRIVER_EXPORT length(const char *text)
 {
+#if __GNUC__ >= 12
+	/* gcc >= 12 will generate implicit reference to strlen with the code below */
+	return _mint_strlen(text);
+#else
     int n;
 
     n = 0;
@@ -614,6 +618,7 @@ long DRIVER_EXPORT length(const char *text)
         n++;
 
     return n;
+#endif
 }
 
 

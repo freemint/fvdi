@@ -104,12 +104,18 @@ Virtual *initialize_vdi(void)
     dummy_vwk->real_address = dummy_wk;
     dummy_vwk->standard_handle = -1;
 
+#if __GNUC__ >= 11
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
     for (i = -1; i < 256; i++)
     {
         dummy_wk->function[i].retvals[0] = 0;
         dummy_wk->function[i].retvals[1] = 0;
         dummy_wk->function[i].code = bad_or_non_fvdi_handle;
     }
+#if __GNUC__ >= 11
+#pragma GCC diagnostic warning "-Warray-bounds"
+#endif
 
     non_fvdi_wk = dummy_wk;
     non_fvdi_vwk = dummy_vwk;
@@ -237,7 +243,13 @@ Virtual *initialize_vdi(void)
     wk->r.text = default_text;
     wk->r.mouse = (void CDECL (*)(struct wk_ *wk, long x, long y, Mouse *mouse))do_nothing; /* must be set by driver */
 
+#if __GNUC__ >= 12
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
     copymem(default_functions - 1, (char *)((long)wk->function - sizeof(Function)), 257 * sizeof(Function));
+#if __GNUC__ >= 12
+#pragma GCC diagnostic warning "-Warray-bounds"
+#endif
     wk->opcode5_count = *(short *) ((long) default_opcode5 - 2);
     copymem(default_opcode5, wk->opcode5, (wk->opcode5_count + 1) * sizeof(void *));
     wk->opcode11_count = *(short *) ((long) default_opcode11 - 2);
