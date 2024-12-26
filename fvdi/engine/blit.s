@@ -12,7 +12,7 @@ transparent	equ	1		; Fall through?
 	.include	"macros.inc"
 
 	xref	clip_rect
-	xref	setup_blit,setup_plot,tos_colour
+	xref	setup_plot,tos_colour
 	xref	_expand_area
 	xref	_pattern_ptrs
 	xref	_default_line
@@ -779,6 +779,37 @@ lib_vro_cpyfm:
 	rts
 
 
+* setup_blit - Internal function
+*
+* Sets up pointers to pixel blit functions
+* In:	a0	VDI struct
+*	d0	drawing mode
+* Out:	a1	blit function
+*	a3	set pixel function
+*	a4	get pixel function
+setup_blit:
+	move.l	vwk_real_address(a0),a1
+	move.l	wk_r_set_pixel(a1),a3
+	move.l	wk_r_get_pixel(a1),a4
+	ifne mc68000
+	move.w d0,a1
+	add.l  a1,a1
+	add.l  a1,a1
+	move.l blit_routines(pc,a1),a1
+	else
+	ifne mcoldfire
+	ext.l d0
+	move.l blit_routines(pc,d0.l*4),a1
+	else
+	move.l blit_routines(pc,d0.w*4),a1
+	endc
+	endc
+	rts
+
+blit_routines:
+	dc.l	blit_0,blit_1,blit_2,blit_3,blit_4,blit_5,blit_6,blit_7
+	dc.l	blit_8,blit_9,blit_a,blit_b,blit_c,blit_d,blit_e,blit_f
+
 * _default_blit - Pixel by pixel blit routine
 * In:	a0	VDI struct, destination MFDB, VDI struct, source MFDB
 *	d0	Mode
@@ -792,9 +823,7 @@ lib_vro_cpyfm:
 _default_blit:
 	move.l	a0,a2
 	move.l	(a0),a0
-	move.w	d0,-(a7)
 	bsr	setup_blit
-	addq.l	#2,a7
 	move.l	a2,a0
 
 	cmp.w	d4,d2
@@ -1575,6 +1604,267 @@ rotate_mem:
 	movem.l	(a7)+,d0-d3/a2-a3
 	rts
 
+* blit_0 - Internal function
+*
+* D1 = 0 (clear destination block)
+* In:	a0	-> VDI struct, destination MFDB, VDI struct, source MFDB
+*	d1	Source x (high), destination x (low)
+*	d2	Source y (high), destination y (low)
+*	a3	set pixel function
+*	a4	get pixel function
+blit_0:
+	moveq	#0,d0
+	jsr	(a3)
+	rts
+
+* blit_1 - Internal function
+*
+* D1 = S and D
+blit_1:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	jsr	(a4)
+	and.w	d7,d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_2 - Internal function
+*
+* D1 = S and (not D)
+blit_2:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	jsr	(a4)
+	not.w	d0
+	and.w	d7,d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_3 - Internal function
+*
+* D1 = S (replace mode)
+blit_3:
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	jsr	(a3)
+	rts
+
+* blit_4 - Internal function
+*
+* D1 = (not S) and D (erase mode)
+blit_4:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	not.w	d7
+	jsr	(a4)
+	and.w	d7,d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_5 - Internal function
+*
+* D1 = D (no operation)
+blit_5:
+	rts
+
+* blit_6 - Internal function
+*
+* D1 = S xor D (XOR mode)
+blit_6:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	jsr	(a4)
+	eor.w	d7,d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_7 - Internal function
+*
+* D1 = S or D (transparent mode)
+blit_7:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	jsr	(a4)
+	or.w	d7,d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_8 - Internal function
+*
+* D1 = not (S or D)
+blit_8:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	jsr	(a4)
+	or.w	d7,d0
+	not.w	d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_9 - Internal function
+*
+* D1 = not (S xor D)
+blit_9:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	jsr	(a4)
+	eor.w	d7,d0
+	not.w	d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_a - Internal function
+*
+* D1 = not D
+blit_a:
+	jsr	(a4)
+	not.w	d0
+	jsr	(a3)
+	rts
+
+* blit_b - Internal function
+*
+* D1 = S or (not D)
+blit_b:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	jsr	(a4)
+	not.w	d0
+	or.w	d7,d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_c - Internal function
+*
+* D1 = not S
+blit_c:
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	not.w	d0
+	jsr	(a3)
+	rts
+
+* blit_d - Internal function
+*
+* D1 = (not S) or D (reverse transparent mode)
+blit_d:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	not.w	d7
+	jsr	(a4)
+	or.w	d7,d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_e - Internal function
+*
+* D1 = not (S and D)
+blit_e:
+	move.l	d7,-(a7)
+	swap	d1
+	swap	d2
+	addq.l	#8,a0
+	jsr	(a4)
+	subq.l	#8,a0
+	swap	d1
+	swap	d2
+	move.w	d0,d7
+	jsr	(a4)
+	and.w	d7,d0
+	not.w	d0
+	jsr	(a3)
+	move.l	(a7)+,d7
+	rts
+
+* blit_f - Internal function
+*
+* D1 = 1 (fill destination block)
+blit_f:
+	moveq	#-1,d0
+	jsr	(a3)
+	rts
 
 	data
 

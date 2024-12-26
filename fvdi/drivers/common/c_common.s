@@ -46,7 +46,7 @@
 *
 * called by:
 *     engine/mouse.s: mouse_show
-*     engine/vdi_misc.s: setup_blit (various blit routines)
+*     engine/blit.s: setup_blit (various blit routines)
 *---------
 _c_set_pixel:
 	movem.l		d0-d2/a0-a2,-(a7)
@@ -95,7 +95,7 @@ _c_set_pixel:
 *
 * called by:
 *     engine/mouse.s: mouse_show
-*     engine/vdi_misc.s: setup_blit (various blit routines)
+*     engine/blit.s: setup_blit (various blit routines)
 *---------
 _c_get_pixel:
 	movem.l		d1-d2/a0-a2,-(a7)

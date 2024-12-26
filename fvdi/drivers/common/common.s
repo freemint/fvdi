@@ -53,7 +53,7 @@ both		equ	1	; Write in both FastRAM and on screen
 * called by:
 *     engine/mouse.s: mouse_unshow
 *     engine/mouse.s: mouse_show
-*     engine/vdi_misc.s: setup_blit (various blit routines)
+*     engine/blit.s: setup_blit (various blit routines)
 *---------
 _set_pixel:
 	movem.l		d0-d7/a0-a6,-(a7)	; Used to have -3/4/6 for normal/both
@@ -100,7 +100,7 @@ _set_pixel:
 *
 * called by:
 *     engine/mouse.s: mouse_show
-*     engine/vdi_misc.s: setup_blit (various blit routines)
+*     engine/blit.s: setup_blit (various blit routines)
 *---------
 _get_pixel:
 	movem.l		d1-d7/a0-a6,-(a7)	; Used to have -3/4/6 for normal/both
