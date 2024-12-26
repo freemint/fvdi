@@ -62,11 +62,11 @@ v_get_pixel:
 *       a0      VDI struct
 lib_v_get_pixel:
 	move.l	d2,-(a7)
-	clr.l	-(a7)
+	move.l	vwk_real_address(a0),a2
+	pea		wk_screen_mfdb(a2)
 	move.l	a0,-(a7)
 	move.w	(a1)+,d1
 	move.w	(a1)+,d2
-	move.l	vwk_real_address(a0),a2
 	move.l	wk_r_get_pixel(a2),a2
 	move.l	a7,a0
 	jsr	(a2)
