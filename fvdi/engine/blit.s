@@ -397,9 +397,7 @@ _default_fill:
 	move.l	wk_r_get_colour(a1),a1	; Index to real colour
 	jsr	(a1)
 
-	move.w	d6,-(a7)
 	bsr	setup_plot
-	addq.l	#2,a7
 
 ;	move.l	d5,a2
 
@@ -621,9 +619,10 @@ _default_expand:
 
 	move.l	a0,a2
 	move.l	(a0),a0
-	move.w	d7,-(a7)
+	move.w	d6,-(a7)
+	move.w  d7,d6
 	bsr	setup_plot
-	addq.l	#2,a7
+	move.w	(a7)+,d6
 	move.l	a2,a0
 
 	move.l	12(a0),a2	; Source MFDB

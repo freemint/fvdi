@@ -13,7 +13,7 @@ always_clip_l	equ	1		; Always clip lines?
 	.include	"vdi.inc"
 	.include	"macros.inc"
 
-	xdef	clip_rect,clip_point,setup_plot,clip_line
+	xdef	clip_rect,clip_point,clip_line
 
 
 	text
@@ -83,82 +83,6 @@ clip_point:
 	rts					; LE for not clipped!
 .outside:
 	move	#0,ccr				; Set GT for clipped!
-	rts
-
-
-* setup_plot - Internal function
-*
-* Sets up pointers to pixel draw functions
-* In:	a0	VDI struct
-*	4(a7)	drawing mode
-* Out:	a1	draw function
-*	a3	set pixel function
-*	a4	get pixel function
-setup_plot:
-	move.l	vwk_real_address(a0),a1
-	move.l	wk_r_set_pixel(a1),a3
-	move.l	wk_r_get_pixel(a1),a4
-	lea	mode_routines,a1
-	add.w	4(a7),a1
-	add.w	4(a7),a1
-	add.w	4(a7),a1
-	add.w	4(a7),a1
-	move.l	-4(a1),a1
-	rts
-
-* p_replace - Internal function
-*
-* Draws in replace mode
-* In:	a0	-> VDI struct, destination MFDB
-*	d0	background.w and foreground.w colour
-*	d1	x
-*	d2	y
-*	a3	set pixel function
-*	a4	get pixel function
-*	carry	current mask bit
-p_replace:
-	bcc	.background
-	jsr	(a3)
-	rts
-.background:
-	swap	d0
-	jsr	(a3)
-	swap	d0
-	rts
-
-* p_transp - Internal function
-*
-* Draws in transparent mode
-p_transp:
-	bcc	.nothing
-	jsr	(a3)
-.nothing:
-	rts
-
-* p_xor - Internal function
-*
-* Draws in xor mode
-* I don't think this does the right thing!
-p_xor:
-	lbcc	.nothing,1
-	move.l	d0,-(a7)
-;	move.w	d0,-(a7)
-	jsr	(a4)
-;	eor.w	d0,(a7)		; No convenient addressing mode!
-;	move.w	(a7)+,d0
-	not.w	d0		; Is this right instead perhaps?
-	jsr	(a3)
-	move.l	(a7)+,d0
- label .nothing,1
-	rts
-
-* p_revtransp - Internal function
-*
-* Draws in reverse transparent mode
-p_revtransp:
-	lbcs	.nothing,1
-	jsr	(a3)
- label .nothing,1
 	rts
 
 
@@ -298,11 +222,3 @@ clip_line:
 	movem.l		(a7)+,d0/d5-d7
 	move.w		#2,-(a7)	; Return with the overflow flag set
 	rtr
-
-
-	data
-
-mode_routines:
-	dc.l	p_replace,p_transp,p_xor,p_revtransp
-
-	end

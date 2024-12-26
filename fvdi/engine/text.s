@@ -12,7 +12,7 @@ transparent	equ	1		; Fall through?
 	.include	"macros.inc"
 
 	xref	clip_point,clip_line
-	xref	setup_plot,tos_colour
+	xref	tos_colour
 	xref	line_types
 	xref	_lib_vqt_extent,lib_vrt_cpyfm
 	xref	asm_allocate_block,asm_free_block

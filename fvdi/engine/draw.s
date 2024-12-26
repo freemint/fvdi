@@ -15,7 +15,7 @@ transparent	equ	1		; Fall through?
 	.include	"macros.inc"
 
 	xref	clip_point,clip_line,clip_rect
-	xref	setup_plot,tos_colour
+	xref	tos_colour
 	xref	_line_types
 	xref	lib_vqt_extent,lib_vrt_cpyfm
 	xref	asm_allocate_block,asm_free_block
@@ -33,6 +33,7 @@ transparent	equ	1		; Fall through?
 	xdef	_lib_v_pline
 	xdef	v_rbox,v_rfbox
 
+	xdef	setup_plot
 	xdef	_default_line
 	xdef	_fill_poly,_hline,_fill_spans
 	xdef	_c_pline
@@ -552,9 +553,95 @@ _default_line:
 	rts
 
 
+* p_replace - Internal function
+*
+* Draws in replace mode
+* In:	a0	-> VDI struct, destination MFDB
+*	d0	background.w and foreground.w colour
+*	d1	x
+*	d2	y
+*	a3	set pixel function
+*	a4	get pixel function
+*	carry	current mask bit
+p_replace:
+	bcc	.background
+	jsr	(a3)
+	rts
+.background:
+	swap	d0
+	jsr	(a3)
+	swap	d0
+	rts
+
+* p_transp - Internal function
+*
+* Draws in transparent mode
+p_transp:
+	bcc	.nothing
+	jsr	(a3)
+.nothing:
+	rts
+
+* p_xor - Internal function
+*
+* Draws in xor mode
+* I don't think this does the right thing!
+p_xor:
+	lbcc	.nothing,1
+	move.l	d0,-(a7)
+;	move.w	d0,-(a7)
+	jsr	(a4)
+;	eor.w	d0,(a7)		; No convenient addressing mode!
+;	move.w	(a7)+,d0
+	not.w	d0		; Is this right instead perhaps?
+	jsr	(a3)
+	move.l	(a7)+,d0
+ label .nothing,1
+	rts
+
+* p_revtransp - Internal function
+*
+* Draws in reverse transparent mode
+p_revtransp:
+	lbcs	.nothing,1
+	jsr	(a3)
+ label .nothing,1
+	rts
+
+
+mode_routines:
+	dc.l	p_replace,p_transp,p_xor,p_revtransp
+
 *
 * Various
 *
+
+* setup_plot - Internal function
+*
+* Sets up pointers to pixel draw functions
+* In:	a0	VDI struct
+*	d6	drawing mode
+* Out:	a1	draw function
+*	a3	set pixel function
+*	a4	get pixel function
+setup_plot:
+	move.l	vwk_real_address(a0),a1
+	move.l	wk_r_set_pixel(a1),a3
+	move.l	wk_r_get_pixel(a1),a4
+	ifne mc68000
+	move.w d6,a1
+	add.l  a1,a1
+	add.l  a1,a1
+	move.l mode_routines-4(pc,a1),a1
+	else
+	ifne mcoldfire
+	ext.l d6
+	move.l mode_routines-4(pc,d6.l*4),a1
+	else
+	move.l mode_routines-4(pc,d6.w*4),a1
+	endc
+	endc
+	rts
 
 * v_circle - Standard Trap function
 * Todo: -
