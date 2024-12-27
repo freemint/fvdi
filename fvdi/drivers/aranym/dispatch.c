@@ -11,6 +11,7 @@
 #include "driver.h"
 #include "aranym.h"
 #include "os.h"
+#include <stddef.h>
 
 /* NF fVDI ID value */
 static long NF_fVDI;
@@ -23,9 +24,14 @@ static long NF_call  = 0x73014e75L;
 #define nfGetID(n)	(((long CDECL (*)(const char *))&NF_getid)n)
 #define nfCall(n)	(((long CDECL (*)(long, ...))&NF_call)n)
 
+#define verify(x) typedef int verify ## __LINE__[(x) ? 1 : -1]
 
 int nf_initialize(void)
 {
+	/* ARAnyMs fVDI driver currently relies on some constants */
+	verify(offsetof(Virtual, real_address) == 0);
+	verify(offsetof(Workstation, screen.type) == 4);
+	verify(offsetof(Workstation, screen.mfdb.address) == 24);
 	if ((NF_fVDI = nfGetID(("fVDI"))) == 0)
 	{
 		access->funcs.error("ARAnyM: fVDI native feature not present", NULL);
@@ -36,22 +42,46 @@ int nf_initialize(void)
 		access->funcs.error("ARAnyM: incompatible api version", NULL);
 		return 0;
 	}
+
 	return 1;
 }
 
 
 static MFDB *simplify(Virtual *vwk, MFDB *mfdb)
 {
+    Workstation *wk;
+
     vwk = (Virtual *) ((long) vwk & ~1);
     if (!mfdb)
         return 0;
-    else if (!mfdb->address)
+    if (!mfdb->address)
         return 0;
-    else if (mfdb->address == vwk->real_address->screen.mfdb.address)
+    wk = vwk->real_address;
+    /* for offscreen bitmaps, wk->screen.type will be 0 */
+    if (wk->screen.type != 0 && mfdb->address == wk->screen.mfdb.address)
         return 0;
-    else
-        return mfdb;
+    return mfdb;
 }
+
+
+static int is_offscreen_wk(Workstation *wk)
+{
+    /* for offscreen bitmaps, wk->screen.type will be 0 */
+    if (wk->screen.type != 0)
+        return 0;
+    if (wk->screen.mfdb.address == 0)
+        return 0;
+    return 1;
+}
+
+
+#if 0
+static int is_offscreen_vwk(Virtual *vwk)
+{
+    vwk = (Virtual *) ((long) vwk & ~1);
+    return is_offscreen_wk(vwk->real_address);
+}
+#endif
 
 
 static long *clipping(Virtual *vwk, long *rect)
@@ -92,6 +122,8 @@ long CDECL c_write_pixel(Virtual *vwk, MFDB *mfdb, long x, long y, long colour)
 
 long CDECL c_mouse_draw(Workstation *wk, long x, long y, Mouse *mouse)
 {
+	if (is_offscreen_wk(wk))
+		return 0;
     if ((long) mouse > 7)
     {
         unsigned long foreground;

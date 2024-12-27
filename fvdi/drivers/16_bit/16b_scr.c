@@ -33,7 +33,7 @@ c_write_pixel(Virtual *vwk, MFDB *dst, long x, long y, long colour)
         return 0;
 
     wk = vwk->real_address;
-    if (!dst || !dst->address || (dst->address == wk->screen.mfdb.address)) {
+    if (!dst || !dst->address || (dst->address == wk->screen.mfdb.address && wk->screen.type != 0)) {
         offset = wk->screen.wrap * y + x * PIXEL_SIZE;
 #ifdef BOTH
         if (wk->screen.shadow.address) {
@@ -58,7 +58,7 @@ c_read_pixel(Virtual *vwk, MFDB *src, long x, long y)
     unsigned PIXEL colour;
 
     wk = vwk->real_address;
-    if (!src || !src->address || (src->address == wk->screen.mfdb.address)) {
+    if (!src || !src->address || (src->address == wk->screen.mfdb.address && wk->screen.type != 0)) {
         offset = wk->screen.wrap * y + x * PIXEL_SIZE;
 #ifdef BOTH
         if (wk->screen.shadow.address)

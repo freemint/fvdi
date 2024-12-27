@@ -366,7 +366,7 @@ long CDECL c_expand_area(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *
     src_line_add = src_wrap - (((src_x + w) >> 4) - (src_x >> 4) + 1) * 2;
 
     to_screen = 0;
-    if (!dst || !dst->address || (dst->address == wk->screen.mfdb.address)) {       /* To screen? */
+    if (!dst || !dst->address || (dst->address == wk->screen.mfdb.address && wk->screen.type != 0)) {       /* To screen? */
         dst_wrap = wk->screen.wrap;
         dst_addr = wk->screen.mfdb.address;
         to_screen = 1;

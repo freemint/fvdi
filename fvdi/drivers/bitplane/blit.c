@@ -885,7 +885,7 @@ static void bit_blt(struct blit_frame *info)
 static int setup_info(Workstation *wk, struct blit_frame *info, MFDB *src, MFDB *dst, int src_x, int src_y, int dst_x, int dst_y, int w, int h)
 {
     /* Setup plane info for source MFDB */
-    if (src && src->address && (src->address != wk->screen.mfdb.address))
+    if (src && src->address && (src->address != wk->screen.mfdb.address || wk->screen.type == 0))
     {
         /* For a positive source address */
         info->s_form = (unsigned short *) src->address;
@@ -900,7 +900,7 @@ static int setup_info(Workstation *wk, struct blit_frame *info, MFDB *src, MFDB 
     }
 
     /* Setup plane info for destination MFDB */
-    if (dst && dst->address && (dst->address != wk->screen.mfdb.address))
+    if (dst && dst->address && (dst->address != wk->screen.mfdb.address || wk->screen.type == 0))
     {
         /* For a positive address */
         info->d_form = (unsigned short *) dst->address;

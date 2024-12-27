@@ -469,7 +469,7 @@ long CDECL initialize(Virtual *vwk)
 
     if (debug > 2)
     {
-        PRINTF(("  fb_base = $%08lx\n", c_get_videoramaddress()));
+        PRINTF(("  fb_base = $%08lx\n", (unsigned long)vwk->real_address->screen.mfdb.address));
     }
 
     return 1;

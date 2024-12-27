@@ -62,7 +62,7 @@ v_get_pixel:
 *       a0      VDI struct
 lib_v_get_pixel:
 	move.l	d2,-(a7)
-	move.l	vwk_real_address(a0),a2
+	move.l	vwk_real_address(a0),a2 ; pass MFDB of bitmap
 	pea		wk_screen_mfdb(a2)
 	move.l	a0,-(a7)
 	move.w	(a1)+,d1
@@ -389,9 +389,14 @@ _default_fill:
 *	d0	Colour values
 *	d1-d2.w	Coordinates
 *	d6	Mode
+*   a2      pattern
 *	a3-a4	Set/get pixel
 .pattern:
 	movem.l	a3-a4,-(a7)
+
+	move.l	vwk_real_address(a0),a1 ; pass MFDB of bitmap
+	pea		wk_screen_mfdb(a1)
+	move.l	a0,-(a7)
 
 	move.l	vwk_real_address(a0),a1
 	move.l	wk_r_get_colour(a1),a1	; Index to real colour
@@ -401,8 +406,6 @@ _default_fill:
 
 ;	move.l	d5,a2
 
-	clr.l	-(a7)			; No MFDB => draw on screen
-	move.l	a0,-(a7)
 	move.l	a7,a0			; a0 no longer -> VDI struct!
 
 	tst.w	d7

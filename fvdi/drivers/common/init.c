@@ -400,9 +400,9 @@ long CDECL init(Access *_access, Driver *driver, Virtual *vwk, char *opts)
     {
         fallback_fill = wk->r.fill;
         if (accel_s & A_FILL)
-            wk->r.fill = &fill;
+            wk->r.fill = fill;
         else if (accel_c & A_FILL)
-            wk->r.fill = &c_fill;
+            wk->r.fill = c_fill;
     }
     if ((accelerate & A_FILLPOLY) && fill_poly_r)
     {

@@ -51,8 +51,8 @@
 _c_set_pixel:
 	movem.l		d0-d2/a0-a2,-(a7)
 
-	ext.l		d1
-	ext.l		d2
+	ext.l		d1 ; BUG: will clobber high word of table address
+	ext.l		d2 ; BUG: will clobber table length
 	move.l		d0,-(a7)
 	move.l		d2,-(a7)
 	move.l		d1,-(a7)
@@ -68,15 +68,15 @@ _c_set_pixel:
 	bclr		#0,d3
 	move.l		d3,0(a7)
 .write_loop:
-	move.l		20+5*4(a7),a2
+	move.l		20+5*4(a7),a2 ; BUG: should be 20+1*4
 	moveq		#0,d0
 	move.w		(a2)+,d0
 	move.l		d0,8(a7)
 	move.w		(a2)+,d0
 	move.l		d0,12(a7)
-	move.l		a2,20+5*4(a7)
+	move.l		a2,20+5*4(a7) ; BUG: should be 20+1*4
 	ijsr		_write_pixel_r
-	subq.w		#1,2*4(a7)
+	subq.w		#1,2*4(a7)    ; decrement table length
 	bne		.write_loop
 
 .write_done:

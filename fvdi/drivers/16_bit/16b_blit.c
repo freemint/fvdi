@@ -1124,7 +1124,7 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
 
     wk = vwk->real_address;
 
-    if (!src || !src->address || (src->address == wk->screen.mfdb.address)) {       /* From screen? */
+    if (!src || !src->address || (src->address == wk->screen.mfdb.address && wk->screen.type != 0)) {       /* From screen? */
         src_wrap = wk->screen.wrap;
         if (!(src_addr = wk->screen.shadow.address))
             src_addr = wk->screen.mfdb.address;
@@ -1136,7 +1136,7 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
     src_line_add = src_wrap - w * PIXEL_SIZE;
 
     to_screen = 0;
-    if (!dst || !dst->address || (dst->address == wk->screen.mfdb.address)) {       /* To screen? */
+    if (!dst || !dst->address || (dst->address == wk->screen.mfdb.address && wk->screen.type != 0)) {       /* To screen? */
         dst_wrap = wk->screen.wrap;
         dst_addr = wk->screen.mfdb.address;
         to_screen = 1;
