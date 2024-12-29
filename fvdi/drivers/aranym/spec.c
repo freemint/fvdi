@@ -14,18 +14,22 @@ static char const r_8[] = { 8 };
 static char const g_8[] = { 8 };
 static char const b_8[] = { 8 };
 
+/* gggxxxxx rrrrrggg */
 static char const r_16[] = { 5, 3, 4, 5, 6, 7 };
 static char const g_16[] = { 6, 13, 14, 15, 0, 1, 2 };
 static char const b_16[] = { 5, 8, 9, 10, 11, 12 };
 
+/* rrrrrggg gggbbbbb */
 static char const r_16f[] = { 5, 11, 12, 13, 14, 15 };
 static char const g_16f[] = { 6, 5, 6, 7, 8, 9, 10 };
 static char const b_16f[] = { 5, 0, 1, 2, 3, 4 };
 
+/* xxxxxxxx rrrrrrrr gggggggg bbbbbbbb */
 static char const r_32[] = { 8, 16, 17, 18, 19, 20, 21, 22, 23 };
 static char const g_32[] = { 8,  8,  9, 10, 11, 12, 13, 14, 15 };
 static char const b_32[] = { 8,  0,  1,  2,  3,  4,  5,  6,  7 };
 
+/* bbbbbbbb gggggggg rrrrrrrr xxxxxxxx */
 static char const r_32f[] = { 8,  8,  9, 10, 11, 12, 13, 14, 15 };
 static char const g_32f[] = { 8, 16, 17, 18, 19, 20, 21, 22, 23 };
 static char const b_32f[] = { 8, 24, 25, 26, 27, 28, 29, 30, 31 };

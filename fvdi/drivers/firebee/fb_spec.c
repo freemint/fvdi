@@ -30,6 +30,7 @@
 #include "string/memset.h"
 #include <stdint.h>
 
+/* rrrrrggg gggbbbbb */
 static char const r_16[] = { 5, 11, 12, 13, 14, 15 };
 static char const g_16[] = { 6,  5,  6,  7,  8,  9, 10 };
 static char const b_16[] = { 5,  0,  1,  2,  3,  4 };

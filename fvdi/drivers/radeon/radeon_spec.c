@@ -37,6 +37,7 @@
 
 /* color bit organization */
 
+/* rrrrrggg gggbbbbb */
 static char r_16[] = {5, 11, 12, 13, 14, 15};
 static char g_16[] = {6, 5, 6, 7, 8, 9, 10};
 static char b_16[] = {5, 0, 1, 2, 3, 4};

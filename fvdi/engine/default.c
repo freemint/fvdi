@@ -325,7 +325,7 @@ void CDECL vr_transfer_bits(Virtual *vwk, GCBITMAP *src_bm, GCBITMAP *dst_bm, RE
                     mask = 1 << (31 - src_rect->x1 % 32);
                     dst = (long *)&block[src_bm->ctab->no_colors * sizeof(*palette)];
                     v = *src++;
-                    if (mode == 33)
+                    if (mode == 33) /* T_TRANSPARENT */
                     {
                         short coords2[8];
 
