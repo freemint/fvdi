@@ -181,7 +181,8 @@ static short find_free_handle(Virtual ***handle_entry)
 void CDECL v_opnvwk(Virtual *vwk, VDIpars *pars)
 {
     short *intin;
-    short hnd, width, height, bitplanes, lwidth, dummy;
+    short hnd, width, height, bitplanes, dummy;
+    size_t lwidth;
     long extra_size;
     long size;
     Workstation *wk, *new_wk;
@@ -266,8 +267,23 @@ void CDECL v_opnvwk(Virtual *vwk, VDIpars *pars)
         }
         width = (width + 15) & 0xfff0;
 
-        lwidth = (width >> 3) * bitplanes;	/* >> 4 in assembly file */
-        size = (long)lwidth * height;
+        lwidth = (size_t)(width >> 3) * bitplanes;	/* >> 4 in assembly file */
+        /*
+         * currently used as a signed 16bit value in wk->screen.wrap and device.bytes_width;
+         * make sure it does not overflow
+         */
+        if (lwidth >= 32768UL)
+        {
+            PRINTF(("v_opnbm: width too large: %d\n", width));
+            return;
+        }
+        /* check that lwidth * height does not overflow */
+        if ((unsigned short)height >= 2147483648UL / lwidth)
+        {
+            PRINTF(("v_opnbm: height too large: %d\n", height));
+            return;
+        }
+        size = lwidth * height;
 
         if (!mfdb->address)
             extra_size += size;
