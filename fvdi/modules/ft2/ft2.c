@@ -1833,7 +1833,7 @@ static MFDB *ft2_text_render_antialias(Virtual *vwk, Fontheader *font, short x, 
             pxy[5] = y + glyph->yoffset;
             pxy[6] = pxy[4] + tb.width - 1;
             pxy[7] = pxy[5] + tb.height - 1;
-            lib_vdi_spppp(&lib_vrt_cpyfm_nocheck, vwk, vwk->mode, pxy, &tb, NULL, colors);
+            lib_vdi_spppp(lib_vrt_cpyfm_nocheck, vwk, vwk->mode, pxy, &tb, &vwk->real_address->screen.mfdb, colors);
         }
 
         xstart += glyph->advance;
@@ -1864,7 +1864,7 @@ static MFDB *ft2_text_render_antialias(Virtual *vwk, Fontheader *font, short x, 
         pxy[5] = y;
         pxy[6] = pxy[4] + tb.width - 1;
         pxy[7] = pxy[5] + tb.height - 1;
-        lib_vdi_spppp(&lib_vrt_cpyfm_nocheck, vwk, vwk->mode, pxy, &tb, NULL, colors);
+        lib_vdi_spppp(lib_vrt_cpyfm_nocheck, vwk, vwk->mode, pxy, &tb, &vwk->real_address->screen.mfdb, colors);
 
         free(tb.address);
     }
@@ -2402,7 +2402,7 @@ long ft2_text_render_default(Virtual *vwk, unsigned long coords, const short *s,
             pxy[6] = x + t->width - 1;
             pxy[7] = y + t->height - 1;
 
-            lib_vdi_spppp(&lib_vrt_cpyfm_nocheck, vwk, vwk->mode, pxy, t, NULL, colors);
+            lib_vdi_spppp(lib_vrt_cpyfm_nocheck, vwk, vwk->mode, pxy, t, &vwk->real_address->screen.mfdb, colors);
             free(t->address);
         }
     }

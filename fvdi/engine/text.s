@@ -705,7 +705,9 @@ _default_text:
 	move.l	a3,2(a7)		; Points
 	lea	16(a3),a3
 	move.l	a3,6(a7)		; Source MFDB
-	move.l	#0,10(a7)		; Screen as destination
+	move.l  vwk_real_address(a0),a1
+	lea     wk_screen_mfdb(a1),a1
+	move.l	a1,10(a7)		; Screen as destination
 	lea	20(a3),a3
 	move.l	a3,14(a7)		; Pens
 

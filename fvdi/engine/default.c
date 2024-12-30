@@ -357,7 +357,7 @@ void CDECL vr_transfer_bits(Virtual *vwk, GCBITMAP *src_bm, GCBITMAP *dst_bm, RE
                                 v = *src++;
                         }
                     }
-                    lib_vdi_spppp(lib_vro_cpyfm, vwk, 3, coords, &mfdb, 0, 0);
+                    lib_vdi_spppp(lib_vro_cpyfm, vwk, 3, coords, &mfdb, &vwk->real_address->screen.mfdb, 0);
                     coords[5]++;
                     coords[7]++;
                 }
@@ -425,7 +425,7 @@ void CDECL vr_transfer_bits(Virtual *vwk, GCBITMAP *src_bm, GCBITMAP *dst_bm, RE
                     dst = (long *)&block[src_bm->ctab->no_colors * sizeof(*palette)];
                     for (x = src_rect->x2 - src_rect->x1; x >= 0; x--)
                         *dst++ = palette[*src++];
-                    lib_vdi_spppp(lib_vro_cpyfm, vwk, 3, coords, &mfdb, 0, 0);
+                    lib_vdi_spppp(lib_vro_cpyfm, vwk, 3, coords, &mfdb, &vwk->real_address->screen.mfdb, 0);
                     coords[5]++;
                     coords[7]++;
                 }
@@ -454,7 +454,7 @@ void CDECL vr_transfer_bits(Virtual *vwk, GCBITMAP *src_bm, GCBITMAP *dst_bm, RE
                 coords[6] = dst_rect->x2;
                 coords[7] = dst_rect->y2;
 
-                lib_vdi_spppp(lib_vro_cpyfm, vwk, 3, coords, &mfdb, 0, 0);
+                lib_vdi_spppp(lib_vro_cpyfm, vwk, 3, coords, &mfdb, &vwk->real_address->screen.mfdb, 0);
             } else
             {
                 PRINTF(("Unsupported source pixel format ($%lx) for !TC->TC\n", src_bm->px_format));
