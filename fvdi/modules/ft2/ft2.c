@@ -1652,9 +1652,9 @@ void *ft2_char_bitmap(Virtual *vwk, Fontheader *font, long ch, short *bitmap_inf
 }
 
 
-static int ft2_text_size(Virtual *vwk, Fontheader *font, const short *text, int *w, int *h)
+static int ft2_text_size(Virtual *vwk, Fontheader *font, const short *text, long slen, int *w, int *h)
 {
-    const short *ch;
+    const short *ch, *end;
     int x, z;
     int minx = 0, maxx = 0;
 #ifdef CACHE_YSIZE
@@ -1665,7 +1665,8 @@ static int ft2_text_size(Virtual *vwk, Fontheader *font, const short *text, int 
 
     /* Load each character and sum it's bounding box */
     x = 0;
-    for (ch = text; *ch; ++ch)
+    end = text + slen;
+    for (ch = text; ch < end; ++ch)
     {
         error = ft2_find_glyph(vwk, font, *ch, CACHED_METRICS);
         if (error)
@@ -1727,7 +1728,7 @@ static int ft2_text_size(Virtual *vwk, Fontheader *font, const short *text, int 
     {
         char buf[255];
 
-        for (ch = text; *ch; ++ch)
+        for (ch = text; ch < end; ++ch)
         {
             buf[ch - text] = *ch;
         }
@@ -1741,11 +1742,11 @@ static int ft2_text_size(Virtual *vwk, Fontheader *font, const short *text, int 
 }
 
 
-static MFDB *ft2_text_render_antialias(Virtual *vwk, Fontheader *font, short x, short y, const short *text, MFDB *textbuf)
+static MFDB *ft2_text_render_antialias(Virtual *vwk, Fontheader *font, short x, short y, const short *text, long slen, MFDB *textbuf)
 {
     int xstart = 0;
     int width;
-    const short *ch;
+    const short *ch, *end;
     c_glyph *glyph;
 
     FT_Bitmap *current;
@@ -1775,7 +1776,8 @@ static MFDB *ft2_text_render_antialias(Virtual *vwk, Fontheader *font, short x, 
 
     y += ((short *)&font->extra.distance)[vwk->text.alignment.vertical];
 
-    for (ch = text; *ch; ++ch)
+    end = text + slen;
+    for (ch = text; ch < end; ++ch)
     {
         short c = *ch;
 
@@ -1871,12 +1873,12 @@ static MFDB *ft2_text_render_antialias(Virtual *vwk, Fontheader *font, short x, 
 }
 
 
-static MFDB *ft2_text_render(Virtual *vwk, Fontheader *font, const short *text, MFDB *textbuf)
+static MFDB *ft2_text_render(Virtual *vwk, Fontheader *font, const short *text, long slen, MFDB *textbuf)
 {
     int xstart;
     int width;
     int height;
-    const short *ch;
+    const short *ch, *end;
     unsigned char *src;
     unsigned char *dst;
     unsigned char *dst_check;
@@ -1892,7 +1894,7 @@ static MFDB *ft2_text_render(Virtual *vwk, Fontheader *font, const short *text, 
 
     /* Get the dimensions of the text surface */
 #if 0
-    if ((ft2_text_size(vwk, font, text, &width, NULL) < 0) || !width)
+    if ((ft2_text_size(vwk, font, text, slen, &width, NULL) < 0) || !width)
     {
         /* TTF_SetError("Text has zero width"); */
         return NULL;
@@ -1906,14 +1908,9 @@ static MFDB *ft2_text_render(Virtual *vwk, Fontheader *font, const short *text, 
 
         /* Load each character and sum its bounding box */
         x = 0;
-        for (ch = text; *ch; ++ch)
+        end = text + slen;
+        for (ch = text; ch < end; ++ch)
         {
-#if 0
-            if (ft2_find_glyph(vwk, font, *ch, CACHED_METRICS))
-                continue;
-        }
-        glyph = font->extra.current;
-#else
             short c = *ch;
 
             /* This should be done via a macro! */
@@ -1935,7 +1932,6 @@ static MFDB *ft2_text_render(Virtual *vwk, Fontheader *font, const short *text, 
                     continue;
                 }
             }
-#endif
 
             z = x + glyph->minx;
             if (minx > z)
@@ -1995,7 +1991,7 @@ static MFDB *ft2_text_render(Virtual *vwk, Fontheader *font, const short *text, 
 
     /* Load and render each character */
     xstart = 0;
-    for (ch = text; *ch; ++ch)
+    for (ch = text; ch < end; ++ch)
     {
         short c = *ch;
 
@@ -2351,7 +2347,7 @@ static Fontheader *ft2_find_fontsize(Virtual *vwk, Fontheader *font, short ptsiz
 }
 
 
-long ft2_text_render_default(Virtual *vwk, unsigned long coords, short *s, long slen)
+long ft2_text_render_default(Virtual *vwk, unsigned long coords, const short *s, long slen)
 {
     Fontheader *font = vwk->text.current_font;
     MFDB textbuf, *t;
@@ -2376,18 +2372,15 @@ long ft2_text_render_default(Virtual *vwk, unsigned long coords, short *s, long 
         }
     }
 
-    /* Terminate text */
-    s[slen] = 0;
-
     if (antialiasing)
     {
         short x = coords >> 16;
         short y = coords & 0xffffUL;
 
-        ft2_text_render_antialias(vwk, font, x, y, s, &textbuf);
+        ft2_text_render_antialias(vwk, font, x, y, s, slen, &textbuf);
     } else
     {
-        t = ft2_text_render(vwk, font, s, &textbuf);
+        t = ft2_text_render(vwk, font, s, slen, &textbuf);
         if (t && t->address)
         {
             short colors[2];
@@ -2427,7 +2420,7 @@ long ft2_char_width(Virtual *vwk, Fontheader *font, long ch)
     int width;
 
     /* Get the dimensions of the text surface */
-    if (ft2_text_size(vwk, font, s, &width, NULL) < 0)
+    if (ft2_text_size(vwk, font, s, 1, &width, NULL) < 0)
     {
         return 0;
     }
@@ -2436,14 +2429,12 @@ long ft2_char_width(Virtual *vwk, Fontheader *font, long ch)
 }
 
 
-long ft2_text_width(Virtual *vwk, Fontheader *font, short *s, long slen)
+long ft2_text_width(Virtual *vwk, Fontheader *font, const short *s, long slen)
 {
     int width;
 
-    /* Terminate text */
-    s[slen] = 0;
     /* Get the dimensions of the text surface */
-    if (ft2_text_size(vwk, font, s, &width, NULL) < 0)
+    if (ft2_text_size(vwk, font, s, slen, &width, NULL) < 0)
     {
         return 0;
     }

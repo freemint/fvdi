@@ -35,11 +35,11 @@
 int (*external_init)(void) = ft2_init;
 void (*external_term)(void) = ft2_term;
 Fontheader *(*external_load_font)(Virtual *vwk, const char *font) = ft2_load_font;
-long (*external_vqt_extent)(Virtual *vwk, Fontheader *font, short *text, long length) = ft2_text_width;
+long (*external_vqt_extent)(Virtual *vwk, Fontheader *font, const short *text, long length) = ft2_text_width;
 long (*external_vqt_width)(Virtual *vwk, Fontheader *font, long ch) = ft2_char_width;
 long (*external_vst_effects)(Virtual *vwk, Fontheader *font, long effects) = ft2_set_effects;
 Fontheader *(*external_vst_point)(Virtual *vwk, long size, short *sizes) = ft2_vst_point;
-long (*external_renderer)(Virtual *vwk, unsigned long coords, short *text, long length) = ft2_text_render_default;
+long (*external_renderer)(Virtual *vwk, unsigned long coords, const short *text, long length) = ft2_text_render_default;
 void *(*external_char_bitmap)(Virtual *vwk, Fontheader *font, long ch, short *bitmap_info) = ft2_char_bitmap;
 void *(*external_char_advance)(Virtual *vwk, Fontheader *font, long ch, short *advance_info) = ft2_char_advance;
 void (*external_xfntinfo)(Virtual *vwk, Fontheader *font, long flags, XFNT_INFO *info) = ft2_xfntinfo;
@@ -51,11 +51,11 @@ unsigned short (*external_char_index)(Virtual *vwk, Fontheader *font, short *int
 int (*external_init)(void) = 0;
 void (*external_term)(void) = 0;
 Fontheader *(*external_load_font)(Virtual *vwk, const char *font) = 0;
-long (*external_vqt_extent)(Virtual *vwk, Fontheader *font, short *text, long length) = 0;
+long (*external_vqt_extent)(Virtual *vwk, Fontheader *font, const short *text, long length) = 0;
 long (*external_vqt_width)(Virtual *vwk, Fontheader *font, long ch) = 0;
 long (*external_vst_effects)(Virtual *vwk, Fontheader *font, long effects) = 0;
 Fontheader *(*external_vst_point)(Virtual *vwk, long size, short *sizes) = 0;
-long (*external_renderer)(Virtual *vwk, unsigned long coords, short *text, long length) = 0;
+long (*external_renderer)(Virtual *vwk, unsigned long coords, const short *text, long length) = 0;
 void *(*external_char_bitmap)(Virtual *vwk, Fontheader *font, long ch, short *bitmap_info) = 0;
 void *(*external_char_advance)(Virtual *vwk, Fontheader *font, long ch, short *advance_info) = 0;
 void (*external_xfntinfo)(Virtual *vwk, Fontheader *font, long flags, XFNT_INFO *info) = 0;
