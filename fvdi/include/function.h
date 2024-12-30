@@ -84,7 +84,7 @@ void opnvwk_values(Virtual *, VDIpars *);
 void CDECL lib_v_bez(Virtual *vwk, struct v_bez_pars *par);
 long lib_vst_load_fonts(Virtual *vwk, long select);
 void lib_vst_unload_fonts(Virtual *vwk, long select);
-void CDECL lib_vqt_extent(Virtual *vwk, long length, short *string, short *points);
+void CDECL lib_vqt_extent(Virtual *vwk, long length, const short *string, short *points);
 long CDECL lib_vst_effects(Virtual *vwk, long effects);
 void CDECL lib_vst_alignment(Virtual *vwk, unsigned long halign, unsigned long valign, short *hresult, short *vresult);
 long CDECL lib_vqt_name(Virtual * vwk, long number, short *name);
@@ -111,11 +111,11 @@ extern char const ft2_version[];
 extern int (*external_init) (void);
 extern void (*external_term) (void);
 extern Fontheader* (*external_load_font)(Virtual *vwk, const char *font);
-extern long        (*external_vqt_extent)(Virtual *vwk, Fontheader *font, short *text, long length);
+extern long        (*external_vqt_extent)(Virtual *vwk, Fontheader *font, const short *text, long length);
 extern long        (*external_vqt_width)(Virtual *vwk, Fontheader *font, long ch);
 extern Fontheader* (*external_vst_point)(Virtual *vwk, long size, short *sizes);
 extern long        (*external_renderer)(Virtual *vwk, unsigned long coords,
-                    short *text, long length);
+                    const short *text, long length);
 extern void*       (*external_char_bitmap)(Virtual *vwk, Fontheader *font, long ch, short *bitmap_info);
 extern void*       (*external_char_advance)(Virtual *vwk, Fontheader *font, long ch, short *advance_info);
 

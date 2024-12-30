@@ -497,7 +497,7 @@ void CDECL lib_vqt_fontheader(Virtual *vwk, VQT_FHDR *fhdr)
  *  move.l  4(a7),a0        ; vwk as parameter
  *  lea 8(a7),a1
  */
-void CDECL lib_vqt_extent(Virtual *vwk, long length, short *string, short *points)
+void CDECL lib_vqt_extent(Virtual *vwk, long length, const short *string, short *points)
 {
     short ch, width;
     unsigned short low, high;
@@ -511,7 +511,7 @@ void CDECL lib_vqt_extent(Virtual *vwk, long length, short *string, short *point
             return;
         width = set_stack_call_lpppll(vdi_stack_top, vdi_stack_size,
                                       external_vqt_extent,
-                                      vwk, vwk->text.current_font, string, length, 0);
+                                      vwk, vwk->text.current_font, (void *)string, length, 0);
     } else
     {
         char_tab = vwk->text.current_font->table.character;
