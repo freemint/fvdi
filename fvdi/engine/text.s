@@ -85,7 +85,8 @@ lib_v_gtext:
 .left_justified:
 
 	add.l	0(a1),d1
-	move.w	8(a1),d0
+	move.w	8(a1),d0    ; length
+	ext.l	d0
 	move.l	4(a1),a1
 	sub.l	a2,a2		; No special offset table
 	move.l	vwk_real_address(a0),a3
