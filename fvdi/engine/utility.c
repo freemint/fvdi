@@ -607,6 +607,10 @@ void *memchr(const void *s, long c, size_t n)
 
 long DRIVER_EXPORT length(const char *text)
 {
+#if __GNUC__ >= 12
+	/* gcc >= 12 will generate implicit reference to strlen with the code below */
+	return _mint_strlen(text);
+#else
     int n;
 
     n = 0;
@@ -614,6 +618,7 @@ long DRIVER_EXPORT length(const char *text)
         n++;
 
     return n;
+#endif
 }
 
 
@@ -1392,6 +1397,16 @@ long free_all(void)
 }
 
 
+static void cconws(const char *text)
+{
+    while (*text)
+    {
+        if (*text == 0x0a)
+            Cconout(0x0d);
+        Cconout(*text++);
+    }
+}
+
 long DRIVER_EXPORT kputs(const char *text)
 {
     if ((debug_out == -3) && debug_file)
@@ -1405,16 +1420,14 @@ long DRIVER_EXPORT kputs(const char *text)
             free(debug_file);
             debug_file = 0;
             debug_out = -2;
-            kputs("Write to debug file failed!\n");
-            kputs(text);
+            cconws("Write to debug file failed!\n");
+            cconws(text);
         }
         if (file >= 0)
             Fclose(file);
     } else if (debug_out == -2)
     {
-        (void) Cconws(text);
-        if (strchr(text, '\n'))
-            Cconout(0x0d);
+        cconws(text);
     } else if (debug_out == -1)
     {
         if (nf_print_id != 0)
@@ -1422,9 +1435,7 @@ long DRIVER_EXPORT kputs(const char *text)
             nf_ops->call(nf_print_id | 0, text);
         } else
         {
-            (void) Cconws(text);
-            if (strchr(text, '\n'))
-                Cconout(0x0d);
+            cconws(text);
         }
     } else
     {
