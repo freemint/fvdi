@@ -11,11 +11,16 @@ fi
 
 toolsuffix=${CROSS_TOOL##*-}
 
+FT2=
+if test "${FT2_VERSION}" != ""; then FT2="-ft${FT2_VERSION}"; fi
+
 if [ "${CPU_TARGET}" != "" ]
 then
 	ARCHIVE_NAME="${PROJECT_NAME}-${PROJECT_VERSION}-${SHORT_ID}-${CPU_TARGET}.${DEPLOY_ARCHIVE}"
+	LATEST_NAME="${PROJECT_NAME}-latest${FT2}-${CPU_TARGET}.${DEPLOY_ARCHIVE}"
 else
 	ARCHIVE_NAME="${PROJECT_NAME}-${PROJECT_VERSION}-${SHORT_ID}.${DEPLOY_ARCHIVE}"
+	LATEST_NAME="${PROJECT_NAME}-latest.${DEPLOY_ARCHIVE}"
 fi
 ARCHIVE_PATH="${DEPLOY_DIR}/${ARCHIVE_NAME}"
 
@@ -70,10 +75,7 @@ link_file() {
 }
 
 upload_file "$ARCHIVE_PATH" "${UPLOAD_DIR}/${PROJECT_DIR}/${ARCHIVE_NAME}"
-if test -z "${CPU_TARGET}"
-then
-	link_file "$ARCHIVE_NAME" "${PROJECT_DIR}-latest.${DEPLOY_ARCHIVE}"
-fi
+link_file "$ARCHIVE_NAME" "${LATEST_NAME}"
 
 echo ${PROJECT_NAME}-${PROJECT_VERSION}-${SHORT_ID} > .latest_version
 upload_file .latest_version "${UPLOAD_DIR}/${PROJECT_DIR}/.latest_version"
