@@ -8,7 +8,7 @@ then
 	cd /tmp
 	subdir=""
 	if test ${FT2_VERSION} = "2.2.1"; then subdir="freetype-old/"; fi
-	if test ${FT2_VERSION} = "2.5.2"; then subdir="freetype-old/"; fi
+	if test ${FT2_VERSION} = "2.5.5"; then subdir="freetype-old/"; fi
 	wget -q -O - "https://download.savannah.gnu.org/releases/freetype/${subdir}freetype-${FT2_VERSION}.tar.gz" | tar xzf -
 	mv "freetype-${FT2_VERSION}" freetype
 	cd -

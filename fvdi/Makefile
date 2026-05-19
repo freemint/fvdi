@@ -23,7 +23,7 @@ GCC_7=/usr/bin/m68k-atari-mint-gcc-7
 GCC_4=/usr/bin/m68k-atari-mint-gcc
 
 sizecheck:
-	@for ft2 in "" freetype-2.2.1 freetype-2.5.2 freetype-2.8.1 freetype-2.10.2; do \
+	@for ft2 in "" freetype-2.2.1 freetype-2.5.5 freetype-2.8.1 freetype-2.10.4; do \
 		echo $$ft2; \
 		rm -f modules/ft2/freetype; \
 		test "$$ft2" != "" && ln -s ../../../freetype/$$ft2 modules/ft2/freetype; \

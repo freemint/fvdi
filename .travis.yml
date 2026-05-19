@@ -18,19 +18,19 @@ env:
   matrix:
     - CPU_TARGET=000
     - CPU_TARGET=000 FT2_VERSION=2.2.1
-    - CPU_TARGET=000 FT2_VERSION=2.5.2
+    - CPU_TARGET=000 FT2_VERSION=2.5.5
     - CPU_TARGET=000 FT2_VERSION=2.8.1
-    - CPU_TARGET=000 FT2_VERSION=2.10.2
+    - CPU_TARGET=000 FT2_VERSION=2.10.4
     - CPU_TARGET=020
     - CPU_TARGET=020 FT2_VERSION=2.2.1
-    - CPU_TARGET=020 FT2_VERSION=2.5.2
+    - CPU_TARGET=020 FT2_VERSION=2.5.5
     - CPU_TARGET=020 FT2_VERSION=2.8.1
-    - CPU_TARGET=020 FT2_VERSION=2.10.2
+    - CPU_TARGET=020 FT2_VERSION=2.10.4
     - CPU_TARGET=v4e PACF="/tmp/pacf/bin/pacf"
     - CPU_TARGET=v4e FT2_VERSION=2.2.1 PACF="/tmp/pacf/bin/pacf"
-    - CPU_TARGET=v4e FT2_VERSION=2.5.2 PACF="/tmp/pacf/bin/pacf"
+    - CPU_TARGET=v4e FT2_VERSION=2.5.5 PACF="/tmp/pacf/bin/pacf"
     - CPU_TARGET=v4e FT2_VERSION=2.8.1 PACF="/tmp/pacf/bin/pacf"
-    - CPU_TARGET=v4e FT2_VERSION=2.10.2 PACF="/tmp/pacf/bin/pacf"
+    - CPU_TARGET=v4e FT2_VERSION=2.10.4 PACF="/tmp/pacf/bin/pacf"
 
 # If before_install, install or before_script return a non-zero exit code, the build is errored and stops immediately.
 before_install:
