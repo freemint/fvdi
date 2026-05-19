@@ -16,7 +16,7 @@ jobs:
         ft2_version: [ "", "2.2.1", "2.5.5", "2.8.1", "2.10.4" ]
         cross_tool: [ "m68k-atari-mint" ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install SSH keys
         if: ${{ github.event_name == 'push' }}
         env:

@@ -30,7 +30,7 @@ case ${CPU_TARGET} in
 	echo "PACF=$PACF" >> $GITHUB_ENV
 	mkdir -p "/tmp/pacf/bin"
 	cd "/tmp/pacf/bin"
-	wget -q -O - http://microapl.com/Porting/ColdFire/Download/pacflin.gz | gzip -dc > pacf
+	wget -q -O - https://microapl.com/Porting/ColdFire/Download/pacflin.gz | gzip -dc > pacf
 	chmod 755 pacf
 	cd -
 	;;
