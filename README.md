@@ -1,6 +1,6 @@
 [![Build Status](https://github.com/freemint/fvdi/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/freemint/fvdi/actions) 
 
-Latest snapshot: [Download](https://tho-otto.de/snapshots/fvdi/)
+Latest snapshot: [Download](https://atari.joska.no/snapshots/fvdi/)
 
 # fvdi
 fVDI fork with additional fixes and drivers.
