@@ -1,6 +1,9 @@
 [![Build Status](https://github.com/freemint/fvdi/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/freemint/fvdi/actions) 
 
-Latest snapshot: [Download](https://atari.joska.no/snapshots/fvdi/)
+* Latest 000: [no FreeType](https://atari.joska.no/snapshots/fvdi/fvdi-latest-000.zip), [FreeType 2.2.1](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.2.1-000.zip), [2.5.5](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.5.5-000.zip), [2.8.1](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.8.1-000.zip), [2.10.4](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.10.4-000.zip)
+* Latest 020: [no FreeType](https://atari.joska.no/snapshots/fvdi/fvdi-latest-020.zip), [FreeType 2.2.1](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.2.1-020.zip), [2.5.5](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.5.5-020.zip), [2.8.1](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.8.1-020.zip), [2.10.4](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.10.4-020.zip)
+* Latest v4e: [no FreeType](https://atari.joska.no/snapshots/fvdi/fvdi-latest-v4e.zip), [FreeType 2.2.1](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.2.1-v4e.zip), [2.5.5](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.5.5-v4e.zip), [2.8.1](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.8.1-v4e.zip), [2.10.4](https://atari.joska.no/snapshots/fvdi/fvdi-latest-ft2.10.4-v4e.zip)
+* [Archive](https://atari.joska.no/snapshots/fvdi/)
 
 # fvdi
 fVDI fork with additional fixes and drivers.
