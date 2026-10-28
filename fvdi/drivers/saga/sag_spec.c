@@ -285,6 +285,9 @@ long CDECL initialize(Virtual *vwk)
 
 	wk->screen.look_up_table = 0;			/* Was 1 (???)  Shouldn't be needed (graphics_mode) */
 	wk->screen.mfdb.standard = 0;
+	/* Unconverted fvdi.sys values, opnwk() converts them for the final resolution */
+	pixel.width = wk->screen.pixel.width;
+	pixel.height = wk->screen.pixel.height;
 	if (wk->screen.pixel.width > 0)        /* Starts out as screen width */
 		wk->screen.pixel.width = (wk->screen.pixel.width * 1000L) / wk->screen.mfdb.width;
 	else                                   /*   or fixed DPI (negative) */
@@ -316,9 +319,6 @@ long CDECL initialize(Virtual *vwk)
 
 	device.byte_width = wk->screen.wrap;
 	device.address = wk->screen.mfdb.address;
-
-	pixel.width = wk->screen.pixel.width;
-	pixel.height = wk->screen.pixel.height;
 
 	/*
 	 * accelerated mouse routines are in use
