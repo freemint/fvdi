@@ -136,10 +136,11 @@ v_show_c:
 * In:	a1	Parameters   lib_v_show_c(reset)
 *	a0	VDI struct
 lib_v_show_c:
-	move.l	vwk_real_address(a0),a1		; Does not affect flags
+	move.w	(a1),d0				; Always show?
+	move.l	vwk_real_address(a0),a1
 	move.l  a0,-(a7)
 	move.l	_linea_vars,a0
-	move.w	(a1),d0				; Always show?
+	tst.w	d0
 	lbeq	.set_,2
 	move.w	M_HID_CNT(a0),d0
 	lbeq	.end,1				; Already shown?
