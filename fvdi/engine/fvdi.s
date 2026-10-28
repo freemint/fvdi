@@ -510,7 +510,7 @@ _trap14:
 	; move	usp,a0			; PortAsm doesn't swallow this although it's valid
 	.short	0x4e68
 	; mvz.w	2(sp),d0
-	.short	0x71ef
+	.short	0x71ef,0x0002
 	btst	#13,d0			; called from supervisor mode?
   else
 	move	usp,a0
