@@ -190,7 +190,7 @@ _cache_flush:
 	cmp.w	#20,d0
 	blo	cache_end
 	cmp.w	#30,d0
-	beq	is_030
+	bls	is_030		; 68020 and 68030
 
 
 	dc.w	$f4f8		; cpusha bc
