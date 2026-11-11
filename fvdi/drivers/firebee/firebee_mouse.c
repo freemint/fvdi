@@ -89,7 +89,7 @@ static void show_mouse(Virtual *vwk, short x, short y)
     /* Make a new backup */
     backup_x = x - pmouse->hotspot.x;
     backup_y = y - pmouse->hotspot.y;
-    clip_mouse(vwk, x, y, &backup_w, &backup_h);
+    clip_mouse(vwk, backup_x, backup_y, &backup_w, &backup_h);
     c_blit_area(vwk, NULL, backup_x, backup_y, &mouse_backup_mfdb, 0, 0, backup_w, backup_h, 3);
 
     draw_mouse(vwk, x, y);
