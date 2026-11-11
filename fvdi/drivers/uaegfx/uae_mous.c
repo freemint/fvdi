@@ -38,36 +38,64 @@ static MFDB mouse_mfdb = { NULL, 16, 16, 1, 1, 1, { 0, 0, 0 } };
 /* We must save the mouse background */
 static short backup_data[16*16];
 static MFDB mouse_backup_mfdb = { backup_data, 16, 16, 1, 0, 16, { 0, 0, 0 } };
-static short backup_x, backup_y, backup_w, backup_h;
 
-static void clip_mouse(Virtual *vwk, short x, short y, short *pw, short *ph)
+/* Visible part of the mouse: screen position, size and offset inside the shape */
+static short backup_x, backup_y, backup_w, backup_h;
+static short shape_x, shape_y;
+
+/*
+ * Clip the 16x16 mouse rectangle with its top-left corner at (*px, *py)
+ * to the screen. On return, (*px, *py) and (*pw, *ph) give the visible
+ * part and (*psx, *psy) its offset inside the mouse shape.
+ * Returns 0 if no part of the mouse is visible.
+ */
+static int clip_mouse(Virtual *vwk, short *px, short *py, short *psx, short *psy, short *pw, short *ph)
 {
+	short x = *px;
+	short y = *py;
+	short sx = 0;
+	short sy = 0;
 	short w = 16;
 	short h = 16;
 	short screen_w = vwk->real_address->screen.mfdb.width;
 	short screen_h = vwk->real_address->screen.mfdb.height;
 
-	*pw = x + w > screen_w ? screen_w - x : w;
-	*ph = y + h > screen_h ? screen_h - y : h;
+	if (x < 0)
+	{
+		sx = -x;
+		w += x;
+		x = 0;
+	}
+	if (y < 0)
+	{
+		sy = -y;
+		h += y;
+		y = 0;
+	}
+	if (x + w > screen_w)
+		w = screen_w - x;
+	if (y + h > screen_h)
+		h = screen_h - y;
+
+	*px = x;
+	*py = y;
+	*psx = sx;
+	*psy = sy;
+	*pw = w;
+	*ph = h;
+
+	return w > 0 && h > 0;
 }
 
-static long draw_mouse(Virtual *vwk, short x, short y)
+static void draw_mouse(Virtual *vwk)
 {
-	short w, h;
-
-	x -= pmouse->hotspot.x;
-	y -= pmouse->hotspot.y;
-	clip_mouse(vwk, x, y, &w, &h);
-
 	/* Draw the mask, transparent mode */
 	mouse_mfdb.address = pmouse->mask;
-	c_expand_area(vwk, &mouse_mfdb, 0, 0, NULL, x, y, w, h, 2, pmouse->colour.background);
+	c_expand_area(vwk, &mouse_mfdb, shape_x, shape_y, NULL, backup_x, backup_y, backup_w, backup_h, 2, pmouse->colour.background);
 
 	/* Draw the data, transparent mode */
 	mouse_mfdb.address = pmouse->data;
-	c_expand_area(vwk, &mouse_mfdb, 0, 0, NULL, x, y, w, h, 2, pmouse->colour.foreground);
-
-	return 1;
+	c_expand_area(vwk, &mouse_mfdb, shape_x, shape_y, NULL, backup_x, backup_y, backup_w, backup_h, 2, pmouse->colour.foreground);
 }
 
 static void hide_mouse(Virtual *vwk)
@@ -75,7 +103,8 @@ static void hide_mouse(Virtual *vwk)
 	if (mouse_visible)
 	{
 		/* Restore the backup */
-		c_blit_area(vwk, &mouse_backup_mfdb, 0, 0, NULL, backup_x, backup_y, backup_w, backup_h, 3);
+		if (backup_w > 0 && backup_h > 0)
+			c_blit_area(vwk, &mouse_backup_mfdb, 0, 0, NULL, backup_x, backup_y, backup_w, backup_h, 3);
 
 		mouse_visible = 0;
 	}
@@ -90,13 +119,15 @@ static void show_mouse(Virtual *vwk, short x, short y)
 	if (mouse_visible)
 		hide_mouse(vwk);
 
-	/* Make a new backup */
 	backup_x = x - pmouse->hotspot.x;
 	backup_y = y - pmouse->hotspot.y;
-	clip_mouse(vwk, backup_x, backup_y, &backup_w, &backup_h);
-	c_blit_area(vwk, NULL, backup_x, backup_y, &mouse_backup_mfdb, 0, 0, backup_w, backup_h, 3);
+	if (clip_mouse(vwk, &backup_x, &backup_y, &shape_x, &shape_y, &backup_w, &backup_h))
+	{
+		/* Make a new backup */
+		c_blit_area(vwk, NULL, backup_x, backup_y, &mouse_backup_mfdb, 0, 0, backup_w, backup_h, 3);
 
-	draw_mouse(vwk, x, y);
+		draw_mouse(vwk);
+	}
 
 	mouse_visible = 1;
 }
